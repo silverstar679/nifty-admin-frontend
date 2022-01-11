@@ -5,13 +5,14 @@ import {
   CardContent,
   TextField,
   InputAdornment,
-  SvgIcon, Typography
-} from '@mui/material';
-import { Search as SearchIcon } from '../../icons/search';
-import { Upload as UploadIcon } from '../../icons/upload';
-import { Download as DownloadIcon } from '../../icons/download';
+  SvgIcon,
+  Typography,
+} from '@mui/material'
+import { Search as SearchIcon } from '../../icons/search'
+import { Upload as UploadIcon } from '../../icons/upload'
+import { Download as DownloadIcon } from '../../icons/download'
 
-export const CustomerListToolbar = (props) => (
+export const DropListToolbar = (props) => (
   <Box {...props}>
     <Box
       sx={{
@@ -19,33 +20,21 @@ export const CustomerListToolbar = (props) => (
         display: 'flex',
         justifyContent: 'space-between',
         flexWrap: 'wrap',
-        m: -1
+        m: -1,
       }}
     >
-      <Typography
-        sx={{ m: 1 }}
-        variant="h4"
-      >
-        Customers
+      <Typography sx={{ m: 1 }} variant="h4">
+        Drops
       </Typography>
       <Box sx={{ m: 1 }}>
-        <Button
-          startIcon={(<UploadIcon fontSize="small" />)}
-          sx={{ mr: 1 }}
-        >
+        <Button startIcon={<UploadIcon fontSize="small" />} sx={{ mr: 1 }}>
           Import
         </Button>
-        <Button
-          startIcon={(<DownloadIcon fontSize="small" />)}
-          sx={{ mr: 1 }}
-        >
+        <Button startIcon={<DownloadIcon fontSize="small" />} sx={{ mr: 1 }}>
           Export
         </Button>
-        <Button
-          color="primary"
-          variant="contained"
-        >
-          Add Customers
+        <Button color="primary" variant="contained">
+          Add Drops
         </Button>
       </Box>
     </Box>
@@ -58,16 +47,13 @@ export const CustomerListToolbar = (props) => (
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SvgIcon
-                      color="action"
-                      fontSize="small"
-                    >
+                    <SvgIcon color="action" fontSize="small">
                       <SearchIcon />
                     </SvgIcon>
                   </InputAdornment>
-                )
+                ),
               }}
-              placeholder="Search customer"
+              placeholder="Search drop"
               variant="outlined"
             />
           </Box>
@@ -75,4 +61,4 @@ export const CustomerListToolbar = (props) => (
       </Card>
     </Box>
   </Box>
-);
+)
