@@ -1,8 +1,11 @@
-import { useState } from 'react';
-import { Box } from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { DashboardNavbar } from './dashboard-navbar';
-import { DashboardSidebar } from './dashboard-sidebar';
+import { useState, useEffect } from 'react'
+import { Box } from '@mui/material'
+import { styled } from '@mui/material/styles'
+import { DashboardNavbar } from './dashboard-navbar'
+import { DashboardSidebar } from './dashboard-sidebar'
+import fetchDrops from '../services/fetchDrops'
+import { useDispatch } from 'react-redux'
+import { storeDrops } from '../store/drops/dropsSlice'
 
 const DashboardLayoutRoot = styled('div')(({ theme }) => ({
   display: 'flex',
@@ -10,13 +13,23 @@ const DashboardLayoutRoot = styled('div')(({ theme }) => ({
   maxWidth: '100%',
   paddingTop: 64,
   [theme.breakpoints.up('lg')]: {
-    paddingLeft: 280
-  }
-}));
+    paddingLeft: 280,
+  },
+}))
 
 export const DashboardLayout = (props) => {
-  const { children } = props;
-  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const dispatch = useDispatch()
+
+  useEffect(() => {
+    async function getDrops() {
+      const drops = await fetchDrops()
+      dispatch(storeDrops(drops))
+    }
+    getDrops()
+  }, [dispatch])
+
+  const { children } = props
+  const [isSidebarOpen, setSidebarOpen] = useState(true)
 
   return (
     <>
@@ -26,17 +39,14 @@ export const DashboardLayout = (props) => {
             display: 'flex',
             flex: '1 1 auto',
             flexDirection: 'column',
-            width: '100%'
+            width: '100%',
           }}
         >
           {children}
         </Box>
       </DashboardLayoutRoot>
       <DashboardNavbar onSidebarOpen={() => setSidebarOpen(true)} />
-      <DashboardSidebar
-        onClose={() => setSidebarOpen(false)}
-        open={isSidebarOpen}
-      />
+      <DashboardSidebar onClose={() => setSidebarOpen(false)} open={isSidebarOpen} />
     </>
-  );
-};
+  )
+}

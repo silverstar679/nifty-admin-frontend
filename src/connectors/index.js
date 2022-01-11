@@ -1,6 +1,7 @@
 import { InjectedConnector } from '@web3-react/injected-connector'
 import { NetworkConnector } from '@web3-react/network-connector'
 import { ETHEREUM_SUPPORTED_CHAIN_IDS, DEFAULT_POLYGON_NETWORK_CHAIN_ID } from '../config'
+
 const POLLING_INTERVAL = 12000
 const RPC_URLS = {
   137: 'https://polygon-rpc.com/',
