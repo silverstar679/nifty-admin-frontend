@@ -1,15 +1,13 @@
 import Head from 'next/head'
 import { Box, Container } from '@mui/material'
-import { DropListResults } from '../components/drop/drop-list-results'
-import { DropListToolbar } from '../components/drop/drop-list-toolbar'
-import { DashboardLayout } from '../components/dashboard-layout'
+import { DropListResults } from '../../components/drop/drop-list-results'
+import { DropListToolbar } from '../../components/drop/drop-list-toolbar'
+import { DashboardLayout } from '../../components/dashboard-layout'
 import { useSelector } from 'react-redux'
-import { selectDrops } from '../store/drops/dropsSlice'
+import { selectDrops } from '../../store/drops/dropsSlice'
 
 const Drops = () => {
   const { status, drops } = useSelector(selectDrops)
-
-  console.log('drops', drops)
 
   return (
     <>

@@ -15,6 +15,8 @@ import {
   Typography,
 } from '@mui/material'
 import { displayAddress } from '../../utils/displayAddress'
+import NextLink from 'next/link'
+
 export const DropListResults = ({ drops, ...rest }) => {
   const [selectedDropIds, setSelectedDropIds] = useState([])
   const [limit, setLimit] = useState(10)
@@ -86,6 +88,7 @@ export const DropListResults = ({ drops, ...rest }) => {
                 <TableCell>Drop Status</TableCell>
                 <TableCell>Drop Date</TableCell>
                 <TableCell>Battle Status</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -106,7 +109,14 @@ export const DropListResults = ({ drops, ...rest }) => {
                       }}
                     >
                       <Typography color="textPrimary" variant="body1">
-                        {drop.name}
+                        <NextLink
+                          href={{
+                            pathname: '/drops/[address]',
+                            query: { address: drop.address },
+                          }}
+                        >
+                          <a>{drop.name}</a>
+                        </NextLink>
                       </Typography>
                     </Box>
                   </TableCell>
@@ -116,8 +126,9 @@ export const DropListResults = ({ drops, ...rest }) => {
                   <TableCell>{drop.network}</TableCell>
                   <TableCell>{drop.type}</TableCell>
                   <TableCell>{drop.isDropEnded ? 'Done' : 'Pending'}</TableCell>
-                  <TableCell>{drop.dropDate}</TableCell>
+                  <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
                   <TableCell>{drop.isBattleEnded ? 'Done' : 'Pending'}</TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               ))}
             </TableBody>

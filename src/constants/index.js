@@ -1,1 +1,2 @@
-export const NetworkContextName = 'NETWORK'
+export const PolygonNetworkContextName = 'POLYGON'
+export const EthereumNetworkContextName = 'ETHEREUM'

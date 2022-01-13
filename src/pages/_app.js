@@ -12,7 +12,13 @@ import getLibrary from '../utils/getLibrary'
 import Web3ReactManager from '../components/Web3ReactManager'
 import { Provider } from 'react-redux'
 import store from '../store'
-const Web3ProviderNetwork = dynamic(() => import('../components/NetworkProvider'), { ssr: false })
+
+const Web3ProviderPolygonNetwork = dynamic(() => import('../components/PolygonNetworkProvider'), {
+  ssr: false,
+})
+const Web3ProviderEthereumNetwork = dynamic(() => import('../components/EthereumNetworkProvider'), {
+  ssr: false,
+})
 
 const clientSideEmotionCache = createEmotionCache()
 
@@ -23,22 +29,24 @@ const App = (props) => {
 
   return (
     <Web3ReactProvider getLibrary={getLibrary}>
-      <Web3ProviderNetwork getLibrary={getLibrary}>
-        <Provider store={store}>
-          <CacheProvider value={emotionCache}>
-            <Head>
-              <title>Nifty Royale Admin</title>
-              <meta name="viewport" content="initial-scale=1, width=device-width" />
-            </Head>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <ThemeProvider theme={theme}>
-                <CssBaseline />
-                <Web3ReactManager>{getLayout(<Component {...pageProps} />)}</Web3ReactManager>
-              </ThemeProvider>
-            </LocalizationProvider>
-          </CacheProvider>
-        </Provider>
-      </Web3ProviderNetwork>
+      <Web3ProviderEthereumNetwork getLibrary={getLibrary}>
+        <Web3ProviderPolygonNetwork getLibrary={getLibrary}>
+          <Provider store={store}>
+            <CacheProvider value={emotionCache}>
+              <Head>
+                <title>Nifty Royale Admin</title>
+                <meta name="viewport" content="initial-scale=1, width=device-width" />
+              </Head>
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <ThemeProvider theme={theme}>
+                  <CssBaseline />
+                  <Web3ReactManager>{getLayout(<Component {...pageProps} />)}</Web3ReactManager>
+                </ThemeProvider>
+              </LocalizationProvider>
+            </CacheProvider>
+          </Provider>
+        </Web3ProviderPolygonNetwork>
+      </Web3ProviderEthereumNetwork>
     </Web3ReactProvider>
   )
 }
