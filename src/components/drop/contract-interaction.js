@@ -2,39 +2,41 @@ import { useState, useEffect } from 'react'
 import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
-import {
-  useEthereumWeb3React,
-  usePolygonNetworkWeb3React,
-  useEthereumNetworkWeb3React,
-} from '../../hooks'
-import {
-  useEthereumContract,
-  usePolygonNetworkContract,
-  useEthereumNetworkContract,
-} from '../../hooks/useContract'
+import { useEthereumWeb3React } from '../../hooks'
+import { useEthereumContract, usePolygonNetworkContract } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
+import _ from 'lodash'
 
 export const ContractInteraction = (props) => {
   const battleAddress = props.drop.address
   const polygonContractAddress = props.drop.polygonContractAddress
+  const queueId = props.drop.queueId
+  const type = props.drop.type
 
   const { active, account, chainId } = useEthereumWeb3React()
 
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
-  const [battleState, setBattleState] = useState([])
+  const [battleState, setBattleState] = useState(0)
   const [owner, setOwner] = useState('')
   const [inPlay, setInPlay] = useState([])
-  const [battleStateEth, setBattleStateEth] = useState(0)
   const [isBattleAdded, setIsBattleAdded] = useState(false)
   const [isBattleEnded, setIsBattleEnded] = useState(false)
+  const [defaultTokenInfo, setDefaultTokenInfo] = useState([])
 
   const [values, setValues] = useState({
     price: 0,
     startingTime: Date.now(),
     baseURI: '',
     defaultTokenURI: '',
+    defaultTokenURIRandom: '',
+    defaultTokenCountRandom: 0,
+    removableTokenIndex: 0,
+    defaultTokenURIRandomUpdate:
+      defaultTokenInfo.length !== 0 ? defaultTokenInfo[0].defaultTokenURI : '',
+    defaultTokenCountRandomUpdate:
+      defaultTokenInfo.length !== 0 ? defaultTokenInfo[0].defaultTokenCount : 0,
     prizeTokenURI: '',
     maxSupply: 0,
     unitsPerTransaction: 0,
@@ -88,13 +90,30 @@ export const ContractInteraction = (props) => {
   const polygonContractWithSigner = wallet && polygonContract && polygonContract.connect(wallet)
 
   useEffect(() => {
+    async function getDefaultTokenURIs(_ethereumContract, _index) {
+      return _ethereumContract.defaultTokenURI(_index)
+    }
+    async function getDefaultTokenCount(_ethereumContract, _defaultTokenURI) {
+      return _ethereumContract.tokenURICount(_defaultTokenURI)
+    }
+    async function getMetadataInfo(_ethereumContract, _baseURI, _totalDefaultNFTTypeCount) {
+      let defaultTokenInfo = []
+      await Promise.all(
+        [...Array(_totalDefaultNFTTypeCount).keys()].map(async (index) => {
+          let defaultTokenURI = await getDefaultTokenURIs(_ethereumContract, index)
+          let defaultTokenCount = await getDefaultTokenCount(_ethereumContract, defaultTokenURI)
+          defaultTokenInfo.push({ defaultTokenURI, defaultTokenCount })
+        })
+      ).then((_) => {
+        setDefaultTokenInfo(defaultTokenInfo)
+      })
+    }
     async function getDropInfo() {
       Promise.all([
         ethereumContract.battleState(),
         ethereumContract.price(),
         ethereumContract.startingTime(),
         ethereumContract.baseURI(),
-        ethereumContract.defaultTokenURI(),
         ethereumContract.prizeTokenURI(),
         ethereumContract.maxSupply(),
         ethereumContract.unitsPerTransaction(),
@@ -105,7 +124,6 @@ export const ContractInteraction = (props) => {
           price,
           startingTime,
           baseURI,
-          defaultTokenURI,
           prizeTokenURI,
           maxSupply,
           unitsPerTransaction,
@@ -116,13 +134,40 @@ export const ContractInteraction = (props) => {
             price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
             startingTime: BigNumber.from(startingTime).toNumber(),
             baseURI,
-            defaultTokenURI,
             prizeTokenURI,
             maxSupply: BigNumber.from(maxSupply).toNumber(),
             unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
           })
           setOwner(owner)
           setBattleState(battleState)
+          if (battleState !== 0 && queueId) {
+            Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
+              setValues({
+                ...values,
+                intervalTime: BigNumber.from(battleInfo.intervalTime).toNumber(),
+                eliminatedTokenCount: BigNumber.from(battleInfo.eliminatedTokenCount).toNumber(),
+              })
+            })
+          }
+          if (type === 'random') {
+            Promise.all([ethereumContract.totalDefaultNFTTypeCount()]).then(
+              ([totalDefaultNFTTypeCount]) => {
+                ;(async () =>
+                  await getMetadataInfo(
+                    ethereumContract,
+                    baseURI,
+                    parseInt(totalDefaultNFTTypeCount, 10)
+                  ))().then((e) => {})
+              }
+            )
+          } else {
+            Promise.all([ethereumContract.defaultTokenURI()]).then(([defaultTokenURI]) => {
+              setValues({
+                ...values,
+                defaultTokenURI,
+              })
+            })
+          }
         }
       )
     }
@@ -138,7 +183,7 @@ export const ContractInteraction = (props) => {
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
           setInPlay(inPlayEmitted)
-          setBattleStateEth(1)
+          setBattleState(1)
         }
       })
       polygonContract.removeAllListeners('BattleAdded')
@@ -173,7 +218,6 @@ export const ContractInteraction = (props) => {
         }
       } catch (e) {}
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract])
 
   const startBattle = async () => {
@@ -314,10 +358,7 @@ export const ContractInteraction = (props) => {
 
   const updateIntervalTime = async () => {
     if (account === owner) {
-      const tx = await polygonContractWithSigner.setBattleIntervalTime(
-        props.drop.queueId,
-        values.intervalTime
-      )
+      const tx = await polygonContractWithSigner.setBattleIntervalTime(queueId, values.intervalTime)
       await tx.wait()
       console.log('Updated Interval Time: ', tx.hash)
     } else {
@@ -328,11 +369,47 @@ export const ContractInteraction = (props) => {
   const updateEliminatedTokenCount = async () => {
     if (account === owner) {
       const tx = await polygonContractWithSigner.setEliminatedTokenCount(
-        props.drop.queueId,
+        queueId,
         values.eliminatedTokenCount
       )
       await tx.wait()
       console.log('Updated Interval Time: ', tx.hash)
+    } else {
+      console.log('you are not contract owner')
+    }
+  }
+
+  const addDefaultToken = async () => {
+    if (account === owner) {
+      const tx = await ethereumContractWithSigner.addTokenURI(
+        values.defaultTokenURIRandom,
+        values.defaultTokenCountRandom
+      )
+      await tx.wait()
+      console.log('Added Default Token URI: ', tx.hash)
+    } else {
+      console.log('you are not contract owner')
+    }
+  }
+
+  const removeDefaultToken = async () => {
+    if (account === owner) {
+      const tx = await ethereumContractWithSigner.removeTokenURI(values.removableTokenIndex)
+      await tx.wait()
+      console.log('Removed Default Token URI: ', tx.hash)
+    } else {
+      console.log('you are not contract owner')
+    }
+  }
+
+  const updateDefaultTokenCount = async () => {
+    if (account === owner) {
+      const tx = await ethereumContractWithSigner.addTokenURI(
+        values.defaultTokenURIRandomUpdate,
+        values.defaultTokenCountRandomUpdate
+      )
+      await tx.wait()
+      console.log('Updated Default Token Count: ', tx.hash)
     } else {
       console.log('you are not contract owner')
     }
@@ -358,7 +435,7 @@ export const ContractInteraction = (props) => {
                   InputProps={{
                     readOnly: true,
                   }}
-                  value={props.drop.queueId}
+                  value={queueId}
                   variant="outlined"
                 />
               </Grid>
@@ -490,35 +567,155 @@ export const ContractInteraction = (props) => {
             </Button>
           </Box>
         </Card>
+        {type !== 'random' ? (
+          <>
+            <Box sx={{ py: 1 }} />
 
-        <Box sx={{ py: 1 }} />
+            <Card>
+              <CardHeader title="Set Default Token URI" sx={{ py: 1 }} />
+              <Divider />
+              <CardContent>
+                <TextField
+                  fullWidth
+                  label="Default URI"
+                  name="defaultTokenURI"
+                  onChange={handleInputChange}
+                  value={values.defaultTokenURI}
+                  variant="outlined"
+                />
+              </CardContent>
+              <Divider />
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  p: 2,
+                }}
+              >
+                <Button color="primary" variant="contained" onClick={updateDefaultTokenURI}>
+                  Update
+                </Button>
+              </Box>
+            </Card>
+          </>
+        ) : (
+          <>
+            <Box sx={{ py: 1 }} />
 
-        <Card>
-          <CardHeader title="Set Default Token URI" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Default URI"
-              name="defaultTokenURI"
-              onChange={handleInputChange}
-              value={values.defaultTokenURI}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateDefaultTokenURI}>
-              Update
-            </Button>
-          </Box>
-        </Card>
+            <Card>
+              <CardHeader title="Add Default Token" sx={{ py: 1 }} />
+              <Divider />
+              <CardContent>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Default Token URI"
+                      name="defaultTokenURIRandom"
+                      onChange={handleInputChange}
+                      value={values.defaultTokenURIRandom}
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Default Token Count"
+                      name="defaultTokenCountRandom"
+                      onChange={handleInputChange}
+                      value={values.defaultTokenCountRandom}
+                      variant="outlined"
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+              <Divider />
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  p: 2,
+                }}
+              >
+                <Button color="primary" variant="contained" onClick={addDefaultToken}>
+                  Add
+                </Button>
+              </Box>
+            </Card>
+
+            <Box sx={{ py: 1 }} />
+
+            <Card>
+              <CardHeader title="Remove Default Token URI" sx={{ py: 1 }} />
+              <Divider />
+              <CardContent>
+                <TextField
+                  fullWidth
+                  label="Default Token Index"
+                  name="removableTokenIndex"
+                  onChange={handleInputChange}
+                  value={values.removableTokenIndex}
+                  variant="outlined"
+                />
+              </CardContent>
+              <Divider />
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  p: 2,
+                }}
+              >
+                <Button color="primary" variant="contained" onClick={removeDefaultToken}>
+                  Remove
+                </Button>
+              </Box>
+            </Card>
+
+            <Box sx={{ py: 1 }} />
+
+            <Card>
+              <CardHeader title="Update Default Token Count" sx={{ py: 1 }} />
+              <Divider />
+              <CardContent>
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Default Token URI"
+                      name="defaultTokenURIRandomUpdate"
+                      onChange={handleInputChange}
+                      value={values.defaultTokenURIRandomUpdate}
+                      variant="outlined"
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Default Token Count"
+                      name="defaultTokenCountRandomUpdate"
+                      onChange={handleInputChange}
+                      value={values.defaultTokenCountRandomUpdate}
+                      variant="outlined"
+                    />
+                  </Grid>
+                </Grid>
+              </CardContent>
+              <Divider />
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  p: 2,
+                }}
+              >
+                <Button color="primary" variant="contained" onClick={updateDefaultTokenCount}>
+                  Update
+                </Button>
+              </Box>
+            </Card>
+          </>
+        )}
 
         <Box sx={{ py: 1 }} />
 
@@ -700,7 +897,7 @@ export const ContractInteraction = (props) => {
               InputProps={{
                 readOnly: true,
               }}
-              value={props.drop.queueId}
+              value={queueId}
               variant="outlined"
             />
           </CardContent>

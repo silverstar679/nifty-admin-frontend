@@ -15,13 +15,7 @@ export async function getAllDrops() {
 
 export async function deleteDrop(id) {
   try {
-    const response = await axios.delete(`${baseURL}/drop/${id}`, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Content-Type': 'application/json',
-      },
-    })
+    const response = await axios.delete(`${baseURL}/drop/${id}`)
     return response.data
   } catch (error) {
     console.error(error)
@@ -30,7 +24,7 @@ export async function deleteDrop(id) {
 
 export async function updateDrop(id, data) {
   try {
-    const response = await axios.put(`${baseURL}/${id}`, data)
+    const response = await axios.put(`${baseURL}/drop/${id}`, data)
     return response.data
   } catch (error) {
     console.error(error)

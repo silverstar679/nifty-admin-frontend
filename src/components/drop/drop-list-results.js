@@ -52,7 +52,7 @@ export const DropListResults = ({ drops, ...rest }) => {
     let newSelectedDropIds
 
     if (event.target.checked) {
-      newSelectedDropIds = drops.map((drop) => drop.id)
+      newSelectedDropIds = drops.map((drop) => drop._id)
     } else {
       newSelectedDropIds = []
     }
@@ -133,23 +133,9 @@ export const DropListResults = ({ drops, ...rest }) => {
                       />
                     </TableCell>
                     <TableCell>
-                      <Box
-                        sx={{
-                          alignItems: 'center',
-                          display: 'flex',
-                        }}
-                      >
-                        <Typography color="textPrimary" variant="body1">
-                          <NextLink
-                            href={{
-                              pathname: '/drops/[address]',
-                              query: { address: drop.address },
-                            }}
-                          >
-                            <a>{drop.name}</a>
-                          </NextLink>
-                        </Typography>
-                      </Box>
+                      <Typography color="textPrimary" variant="body1">
+                        {drop.name}
+                      </Typography>
                     </TableCell>
                     <TableCell>{displayAddress(drop.address)}</TableCell>
                     <TableCell>{displayAddress(drop.polygonContractAddress)}</TableCell>
