@@ -15,21 +15,6 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 
-const states = [
-  {
-    value: 'alabama',
-    label: 'Alabama',
-  },
-  {
-    value: 'new-york',
-    label: 'New York',
-  },
-  {
-    value: 'san-francisco',
-    label: 'San Francisco',
-  },
-]
-
 export const ContractInteraction = (props) => {
   const battleAddress = props.drop.address
   const polygonContractAddress = props.drop.polygonContractAddress
@@ -38,7 +23,12 @@ export const ContractInteraction = (props) => {
 
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
+  const [battleState, setBattleState] = useState([])
   const [owner, setOwner] = useState('')
+  const [inPlay, setInPlay] = useState([])
+  const [battleStateEth, setBattleStateEth] = useState(0)
+  const [isBattleAdded, setIsBattleAdded] = useState(false)
+  const [isBattleEnded, setIsBattleEnded] = useState(false)
 
   const [values, setValues] = useState({
     price: 0,
@@ -48,9 +38,14 @@ export const ContractInteraction = (props) => {
     prizeTokenURI: '',
     maxSupply: 0,
     unitsPerTransaction: 0,
-    winnerTokenId: 0,
-    ethAmount: 0,
-    erc20Amount: 0,
+    ethAmountEthNet: 0,
+    erc20AmountEthNet: 0,
+    erc20TokenAddressEthNet: '',
+    ethAmountPolyNet: 0,
+    erc20AmountPolyNet: 0,
+    erc20TokenAddressPolyNet: '',
+    intervalTime: 5,
+    eliminatedTokenCount: 1,
   })
 
   const handleInputChange = (event) => {
@@ -90,29 +85,44 @@ export const ContractInteraction = (props) => {
   const wallet = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY, provider)
   // const ethereumInjectedContract = useEthereumContract(battleAddress, ethereumAbi, true)
   const ethereumContractWithSigner = wallet && ethereumContract && ethereumContract.connect(wallet)
+  const polygonContractWithSigner = wallet && polygonContract && polygonContract.connect(wallet)
 
   useEffect(() => {
-    async function getBattleInfo() {
+    async function getDropInfo() {
       Promise.all([
+        ethereumContract.battleState(),
         ethereumContract.price(),
         ethereumContract.startingTime(),
         ethereumContract.baseURI(),
+        ethereumContract.defaultTokenURI(),
         ethereumContract.prizeTokenURI(),
         ethereumContract.maxSupply(),
         ethereumContract.unitsPerTransaction(),
         ethereumContract.owner(),
       ]).then(
-        ([price, startingTime, baseURI, prizeTokenURI, maxSupply, unitsPerTransaction, owner]) => {
+        ([
+          battleState,
+          price,
+          startingTime,
+          baseURI,
+          defaultTokenURI,
+          prizeTokenURI,
+          maxSupply,
+          unitsPerTransaction,
+          owner,
+        ]) => {
           setValues({
             ...values,
             price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
             startingTime: BigNumber.from(startingTime).toNumber(),
             baseURI,
+            defaultTokenURI,
             prizeTokenURI,
             maxSupply: BigNumber.from(maxSupply).toNumber(),
             unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
           })
           setOwner(owner)
+          setBattleState(battleState)
         }
       )
     }
@@ -122,49 +132,111 @@ export const ContractInteraction = (props) => {
       polygonContract &&
       polygonContract.provider
     ) {
-      getBattleInfo()
+      getDropInfo()
+      ethereumContract.removeAllListeners('BattleStarted')
+
+      ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
+        if (battleAddress === battleAddressEmitted) {
+          setInPlay(inPlayEmitted)
+          setBattleStateEth(1)
+        }
+      })
+      polygonContract.removeAllListeners('BattleAdded')
+
+      polygonContract.on('BattleAdded', (battle, event) => {
+        if (battleAddress === battle.gameAddr) {
+          setIsBattleAdded(true)
+        }
+      })
+      polygonContract.removeAllListeners('BattleEnded')
+
+      polygonContract.on('BattleEnded', (finished, gameAddr, winnerTokenId, battleState, event) => {
+        if (battleAddress === gameAddr) {
+          ethereumContractWithSigner.endBattle(winnerTokenId).then(() => {
+            setIsBattleEnded(true)
+          })
+        }
+      })
+    }
+    return () => {
+      try {
+        if (
+          ethereumContract &&
+          ethereumContract.provider &&
+          polygonContract &&
+          polygonContract.provider
+        ) {
+          if (!isOldVersion) {
+            ethereumContract.removeListener('BattleStarted')
+            polygonContract.removeListener('BattleAdded')
+          }
+        }
+      } catch (e) {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract])
 
-  const startEthBattle = async () => {
+  const startBattle = async () => {
     if (account === owner) {
       const tx = await ethereumContractWithSigner.startBattle()
       await tx.wait()
-      console.log('Battle Started: ', tx.hash)
+      console.log('Battle Started on Ethereum: ', tx.hash)
+      if (inPlay.length !== 0) {
+        const txPoly = await polygonContractWithSigner.addToBattleQueue(
+          battleAddress,
+          values.intervalTime,
+          inPlay,
+          values.eliminatedTokenCount
+        )
+        await txPoly.wait()
+        console.log('Battle Started on Polygon: ', txPoly.hash)
+      }
     } else {
       console.log('you are not contract owner')
     }
   }
 
-  const endEthBattle = async () => {
+  const withdrawEthEthNet = async () => {
     if (account === owner) {
-      const tx = await ethereumContractWithSigner.endBattle(values.winnerTokenId)
+      const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountEthNet)
       await tx.wait()
-      console.log('Battle Ended: ', tx.hash)
+      console.log('Withdraw ETH successfully: ', tx.hash)
     } else {
       console.log('you are not contract owner')
     }
   }
 
-  const withdrawEth = async () => {
-    if (account === owner) {
-      const tx = await ethereumContractWithSigner.withdrawETH(values.ethAmount)
-      await tx.wait()
-      console.log('Battle Ended: ', tx.hash)
-    } else {
-      console.log('you are not contract owner')
-    }
-  }
-
-  const withdrawERC20 = async () => {
+  const withdrawERC20EthNet = async () => {
     if (account === owner) {
       const tx = await ethereumContractWithSigner.withdrawERC20Token(
-        battleAddress,
-        values.erc20Amount
+        values.erc20TokenAddressEthNet,
+        values.erc20AmountEthNet
       )
       await tx.wait()
-      console.log('Battle Ended: ', tx.hash)
+      console.log('Withdraw ERC20 successfully: ', tx.hash)
+    } else {
+      console.log('you are not contract owner')
+    }
+  }
+
+  const withdrawEthPolyNet = async () => {
+    if (account === owner) {
+      const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountPolyNet)
+      await tx.wait()
+      console.log('Withdraw ETH successfully: ', tx.hash)
+    } else {
+      console.log('you are not contract owner')
+    }
+  }
+
+  const withdrawERC20PolyNet = async () => {
+    if (account === owner) {
+      const tx = await ethereumContractWithSigner.withdrawERC20Token(
+        values.erc20TokenAddressPolyNet,
+        values.erc20AmountPolyNet
+      )
+      await tx.wait()
+      console.log('Withdraw ERC20 successfully: ', tx.hash)
     } else {
       console.log('you are not contract owner')
     }
@@ -240,8 +312,93 @@ export const ContractInteraction = (props) => {
     }
   }
 
+  const updateIntervalTime = async () => {
+    if (account === owner) {
+      const tx = await polygonContractWithSigner.setBattleIntervalTime(
+        props.drop.queueId,
+        values.intervalTime
+      )
+      await tx.wait()
+      console.log('Updated Interval Time: ', tx.hash)
+    } else {
+      console.log('you are not contract owner')
+    }
+  }
+
+  const updateEliminatedTokenCount = async () => {
+    if (account === owner) {
+      const tx = await polygonContractWithSigner.setEliminatedTokenCount(
+        props.drop.queueId,
+        values.eliminatedTokenCount
+      )
+      await tx.wait()
+      console.log('Updated Interval Time: ', tx.hash)
+    } else {
+      console.log('you are not contract owner')
+    }
+  }
+
   return (
     <Grid container spacing={1}>
+      <Grid item xs={12}>
+        <Card>
+          <CardHeader
+            subheader="Queue ID must be defined in DB before starting"
+            title="Start Battle"
+            sx={{ py: 1 }}
+          />
+          <Divider />
+          <CardContent>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Queue ID"
+                  required
+                  InputProps={{
+                    readOnly: true,
+                  }}
+                  value={props.drop.queueId}
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Interval Time"
+                  name="intervalTime"
+                  onChange={handleInputChange}
+                  value={values.intervalTime}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Eliminated Token Count"
+                  name="eliminatedTokenCount"
+                  onChange={handleInputChange}
+                  value={values.eliminatedTokenCount}
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+          </CardContent>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              p: 2,
+            }}
+          >
+            <Button color="primary" variant="contained" onClick={startBattle}>
+              Start
+            </Button>
+          </Box>
+        </Card>
+      </Grid>
+
       <Grid item md={6}>
         <Card>
           <CardHeader title="Ethereum Contract Functionalities" />
@@ -250,112 +407,7 @@ export const ContractInteraction = (props) => {
         <Box sx={{ py: 1 }} />
 
         <Card>
-          <CardHeader title="Start Battle" sx={{ py: 1 }} />
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={startEthBattle}>
-              Start
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="End Battle" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Winner Token ID"
-              name="winnerTokenId"
-              onChange={handleInputChange}
-              value={values.winnerTokenId}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={endEthBattle}>
-              End
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Withdraw Eth" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Eth Amount"
-              name="ethAmount"
-              onChange={handleInputChange}
-              value={values.ethAmount}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={withdrawEth}>
-              Withdraw ETH
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Withdraw ERC20" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="ERC20 Amount"
-              name="erc20Amount"
-              onChange={handleInputChange}
-              value={values.erc20Amount}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={withdrawERC20}>
-              Withdraw ERC20
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Price" sx={{ py: 1 }} />
+          <CardHeader title="Set NFT Price" sx={{ py: 1 }} />
           <Divider />
           <CardContent>
             <TextField
@@ -384,7 +436,7 @@ export const ContractInteraction = (props) => {
         <Box sx={{ py: 1 }} />
 
         <Card>
-          <CardHeader title="Set Time for Drop" sx={{ py: 1 }} />
+          <CardHeader title="Set Drop Time" sx={{ py: 1 }} />
           <Divider />
           <CardContent>
             <TextField
@@ -554,13 +606,235 @@ export const ContractInteraction = (props) => {
             </Button>
           </Box>
         </Card>
+
+        <Box sx={{ py: 1 }} />
+
+        <Card>
+          <CardHeader title="Withdraw Eth" sx={{ py: 1 }} />
+          <Divider />
+          <CardContent>
+            <TextField
+              fullWidth
+              label="Eth Amount"
+              name="ethAmountEthNet"
+              onChange={handleInputChange}
+              value={values.ethAmountEthNet}
+              variant="outlined"
+            />
+          </CardContent>
+          <Divider />
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              p: 2,
+            }}
+          >
+            <Button color="primary" variant="contained" onClick={withdrawEthEthNet}>
+              Withdraw ETH
+            </Button>
+          </Box>
+        </Card>
+
+        <Box sx={{ py: 1 }} />
+
+        <Card>
+          <CardHeader title="Withdraw ERC20" sx={{ py: 1 }} />
+          <Divider />
+          <CardContent>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="ERC20 Token Address"
+                  name="erc20TokenAddressEthNet"
+                  onChange={handleInputChange}
+                  value={values.erc20TokenAddressEthNet}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="ERC20 Amount"
+                  name="erc20AmountEthNet"
+                  onChange={handleInputChange}
+                  value={values.erc20AmountEthNet}
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+          </CardContent>
+          <Divider />
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              p: 2,
+            }}
+          >
+            <Button color="primary" variant="contained" onClick={withdrawERC20EthNet}>
+              Withdraw ERC20
+            </Button>
+          </Box>
+        </Card>
       </Grid>
       <Grid item md={6}>
         <Card>
-          <CardHeader title="Polygon Contract Functionalities" />
+          <CardHeader
+            title="Polygon Contract Functionalities"
+            subheader="Queue ID must be defined in DB before updating"
+          />
         </Card>
+
         <Box sx={{ py: 1 }} />
 
+        <Card>
+          <CardHeader title="Queue ID" sx={{ py: 1 }} />
+          <Divider />
+          <CardContent>
+            <TextField
+              fullWidth
+              label="Queue ID"
+              required
+              InputProps={{
+                readOnly: true,
+              }}
+              value={props.drop.queueId}
+              variant="outlined"
+            />
+          </CardContent>
+        </Card>
+
+        <Box sx={{ py: 1 }} />
+
+        <Card>
+          <CardHeader title="Set Interval Time" sx={{ py: 1 }} />
+          <Divider />
+          <CardContent>
+            <TextField
+              fullWidth
+              label="Interval Time"
+              name="intervalTime"
+              onChange={handleInputChange}
+              value={values.intervalTime}
+              variant="outlined"
+            />
+          </CardContent>
+          <Divider />
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              p: 2,
+            }}
+          >
+            <Button color="primary" variant="contained" onClick={updateIntervalTime}>
+              Update
+            </Button>
+          </Box>
+        </Card>
+
+        <Box sx={{ py: 1 }} />
+
+        <Card>
+          <CardHeader title="Set Eliminated Token Count" sx={{ py: 1 }} />
+          <Divider />
+          <CardContent>
+            <TextField
+              fullWidth
+              label="Eliminated Token Count"
+              name="eliminatedTokenCount"
+              onChange={handleInputChange}
+              value={values.eliminatedTokenCount}
+              variant="outlined"
+            />
+          </CardContent>
+          <Divider />
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              p: 2,
+            }}
+          >
+            <Button color="primary" variant="contained" onClick={updateEliminatedTokenCount}>
+              Update
+            </Button>
+          </Box>
+        </Card>
+
+        <Box sx={{ py: 1 }} />
+
+        <Card>
+          <CardHeader title="Withdraw Eth" sx={{ py: 1 }} />
+          <Divider />
+          <CardContent>
+            <TextField
+              fullWidth
+              label="Eth Amount"
+              name="ethAmountPolyNet"
+              onChange={handleInputChange}
+              value={values.ethAmountPolyNet}
+              variant="outlined"
+            />
+          </CardContent>
+          <Divider />
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              p: 2,
+            }}
+          >
+            <Button color="primary" variant="contained" onClick={withdrawEthPolyNet}>
+              Withdraw ETH
+            </Button>
+          </Box>
+        </Card>
+
+        <Box sx={{ py: 1 }} />
+
+        <Card>
+          <CardHeader title="Withdraw ERC20" sx={{ py: 1 }} />
+          <Divider />
+          <CardContent>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="ERC20 Token Address"
+                  name="erc20TokenAddressPolyNet"
+                  onChange={handleInputChange}
+                  value={values.erc20TokenAddressPolyNet}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="ERC20 Amount"
+                  name="erc20AmountPolyNet"
+                  onChange={handleInputChange}
+                  value={values.erc20AmountPolyNet}
+                  variant="outlined"
+                />
+              </Grid>
+            </Grid>
+          </CardContent>
+          <Divider />
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'flex-start',
+              p: 2,
+            }}
+          >
+            <Button color="primary" variant="contained" onClick={withdrawERC20PolyNet}>
+              Withdraw ERC20
+            </Button>
+          </Box>
+        </Card>
       </Grid>
     </Grid>
   )
