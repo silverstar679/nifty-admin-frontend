@@ -3,7 +3,11 @@ import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } 
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useEthereumWeb3React } from '../../hooks'
-import { useEthereumContract, usePolygonNetworkContract } from '../../hooks/useContract'
+import {
+  useEthereumNetworkContract,
+  useEthereumContract,
+  usePolygonNetworkContract,
+} from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 import _ from 'lodash'
