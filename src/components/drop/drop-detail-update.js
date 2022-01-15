@@ -11,7 +11,12 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
+  MenuItem,
 } from '@mui/material'
+import AdapterDateFns from '@mui/lab/AdapterDateFns'
+import LocalizationProvider from '@mui/lab/LocalizationProvider'
+import DateTimePicker from '@mui/lab/DateTimePicker'
+import { updateDrop } from 'src/services/apis'
 
 const networks = [
   {
@@ -24,6 +29,25 @@ const networks = [
   },
 ]
 
+const types = [
+  {
+    value: 'old',
+    label: 'Old',
+  },
+  {
+    value: 'replace',
+    label: 'Replace',
+  },
+  {
+    value: 'mint',
+    label: 'Minting New',
+  },
+  {
+    value: 'random',
+    label: 'Random',
+  },
+]
+
 export const DropDetailUpdate = (props) => {
   const [values, setValues] = useState({
     address: props.drop.address,
@@ -33,8 +57,7 @@ export const DropDetailUpdate = (props) => {
     defaultMetadata: props.drop.defaultMetadata,
     defaultNFTUri: props.drop.defaultNFTUri,
     description: props.drop.description,
-    dropDate: props.drop.dropDate,
-    extra: props.drop.extra,
+    extra: JSON.stringify(props.drop.extra),
     name: props.drop.name,
     network: props.drop.network,
     polygonContractAddress: props.drop.polygonContractAddress,
@@ -49,6 +72,8 @@ export const DropDetailUpdate = (props) => {
     isDefaultNFTImage: props.drop.isDefaultNFTImage,
   })
 
+  const [dropDate, setDropDate] = useState(props.drop.dropDate)
+
   const handleInputChange = (event) => {
     setValues({
       ...values,
@@ -61,6 +86,37 @@ export const DropDetailUpdate = (props) => {
       ...checkboxValues,
       [event.target.name]: event.target.checked,
     })
+  }
+
+  const handleDropDateChange = (newDate) => {
+    setDropDate(newDate)
+  }
+
+  const handleUpdateDrop = async () => {
+    const data = {
+      name: values.name,
+      address: values.address,
+      artist: values.artist,
+      creator: values.creator,
+      type: values.type,
+      network: values.network,
+      polygonContractAddress: values.polygonContractAddress,
+      queueId: values.queueId,
+      description: values.description,
+      defaultMetadata: values.defaultMetadata,
+      prizeMetadata: values.prizeMetadata,
+      defaultNFTUri: values.defaultNFTUri,
+      extra: JSON.parse(values.extra),
+      created_at: values.created_at,
+
+      isDropEnded: checkboxValues.isDropEnded,
+      isBattleEnded: checkboxValues.isBattleEnded,
+      isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
+
+      dropDate,
+    }
+    const updatedDrop = await updateDrop(props.drop._id, data)
+    console.log(updatedDrop)
   }
 
   return (
@@ -126,7 +182,6 @@ export const DropDetailUpdate = (props) => {
                 label="Queue ID"
                 name="queueId"
                 onChange={handleInputChange}
-                type="number"
                 value={values.queueId}
                 variant="outlined"
               />
@@ -138,37 +193,42 @@ export const DropDetailUpdate = (props) => {
                 name="network"
                 onChange={handleInputChange}
                 select
-                SelectProps={{ native: true }}
                 value={values.network}
                 variant="outlined"
               >
                 {networks.map((option) => (
-                  <option key={option.value} value={option.value}>
+                  <MenuItem key={option.value} value={option.value}>
                     {option.label}
-                  </option>
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
             <Grid item md={6} xs={12}>
               <TextField
                 fullWidth
-                label="Type"
+                label="Select Type"
                 name="type"
                 onChange={handleInputChange}
+                select
                 value={values.type}
                 variant="outlined"
-              />
+              >
+                {types.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </TextField>
             </Grid>
             <Grid item md={6} xs={12}>
-              <TextField
-                fullWidth
-                label="Queue ID"
-                name="queueId"
-                onChange={handleInputChange}
-                type="number"
-                value={values.queueId}
-                variant="outlined"
-              />
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DateTimePicker
+                  label="Drop Date"
+                  value={dropDate}
+                  onChange={handleDropDateChange}
+                  renderInput={(params) => <TextField {...params} />}
+                />
+              </LocalizationProvider>
             </Grid>
             <Grid item md={6} xs={12}>
               <FormGroup>
@@ -176,7 +236,7 @@ export const DropDetailUpdate = (props) => {
                   control={
                     <Checkbox
                       name="isDropEnded"
-                      checked={isDropEnded}
+                      checked={checkboxValues.isDropEnded}
                       onChange={handleCheckboxChange}
                       inputProps={{ 'aria-label': 'controlled' }}
                     />
@@ -191,7 +251,7 @@ export const DropDetailUpdate = (props) => {
                   control={
                     <Checkbox
                       name="isBattleEnded"
-                      checked={isBattleEnded}
+                      checked={checkboxValues.isBattleEnded}
                       onChange={handleCheckboxChange}
                       inputProps={{ 'aria-label': 'controlled' }}
                     />
@@ -206,7 +266,7 @@ export const DropDetailUpdate = (props) => {
                   control={
                     <Checkbox
                       name="isDefaultNFTImage"
-                      checked={isDefaultNFTImage}
+                      checked={checkboxValues.isDefaultNFTImage}
                       onChange={handleCheckboxChange}
                       inputProps={{ 'aria-label': 'controlled' }}
                     />
@@ -214,6 +274,61 @@ export const DropDetailUpdate = (props) => {
                   label="Is Default NFT Image?"
                 />
               </FormGroup>
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Default Metadata URI"
+                name="defaultMetadata"
+                onChange={handleInputChange}
+                value={values.defaultMetadata}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Prize Metadata URI"
+                name="prizeMetadata"
+                onChange={handleInputChange}
+                value={values.prizeMetadata}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Default NFT URI"
+                name="defaultNFTUri"
+                onChange={handleInputChange}
+                value={values.defaultNFTUri}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                label="Description"
+                name="description"
+                rows={3}
+                onChange={handleInputChange}
+                value={values.description}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                multiline
+                label="Extra"
+                name="extra"
+                rows={5}
+                onChange={handleInputChange}
+                value={values.extra}
+                variant="outlined"
+              />
             </Grid>
           </Grid>
         </CardContent>
@@ -225,8 +340,8 @@ export const DropDetailUpdate = (props) => {
             p: 2,
           }}
         >
-          <Button color="primary" variant="contained">
-            Save details
+          <Button color="primary" variant="contained" onClick={handleUpdateDrop}>
+            Update details
           </Button>
         </Box>
       </Card>
