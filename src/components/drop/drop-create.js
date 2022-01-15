@@ -96,6 +96,10 @@ export const DropCreate = (props) => {
     setDropDate(newDate)
   }
 
+  const handleClose = () => {
+    setIsToast(false)
+  }
+
   const handleCreateDrop = async () => {
     const data = {
       name: values.name,

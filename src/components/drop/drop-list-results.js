@@ -48,6 +48,10 @@ export const DropListResults = ({ drops, ...rest }) => {
     setOpenDialog(false)
   }
 
+  const handleClose = () => {
+    setIsToast(false)
+  }
+
   const handleDeleteDrop = async () => {
     setIsToast(false)
 

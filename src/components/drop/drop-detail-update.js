@@ -97,6 +97,10 @@ export const DropDetailUpdate = (props) => {
     setDropDate(newDate)
   }
 
+  const handleClose = () => {
+    setIsToast(false)
+  }
+
   const handleUpdateDrop = async () => {
     const data = {
       name: values.name,
