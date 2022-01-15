@@ -439,6 +439,7 @@ export const ContractInteraction = (props) => {
                   InputProps={{
                     readOnly: true,
                   }}
+                  type="number"
                   value={queueId}
                   variant="outlined"
                 />
@@ -449,6 +450,7 @@ export const ContractInteraction = (props) => {
                   fullWidth
                   label="Interval Time"
                   name="intervalTime"
+                  type="number"
                   onChange={handleInputChange}
                   value={values.intervalTime}
                   variant="outlined"
@@ -459,6 +461,7 @@ export const ContractInteraction = (props) => {
                   fullWidth
                   label="Eliminated Token Count"
                   name="eliminatedTokenCount"
+                  type="number"
                   onChange={handleInputChange}
                   value={values.eliminatedTokenCount}
                   variant="outlined"
@@ -760,6 +763,7 @@ export const ContractInteraction = (props) => {
               fullWidth
               label="Max Purchaseable Amount"
               name="maxSupply"
+              type="number"
               onChange={handleInputChange}
               value={values.maxSupply}
               variant="outlined"
@@ -789,6 +793,7 @@ export const ContractInteraction = (props) => {
               fullWidth
               label="Units per Transaction"
               name="unitsPerTransaction"
+              type="number"
               onChange={handleInputChange}
               value={values.unitsPerTransaction}
               variant="outlined"
@@ -898,6 +903,7 @@ export const ContractInteraction = (props) => {
               fullWidth
               label="Queue ID"
               required
+              type="number"
               InputProps={{
                 readOnly: true,
               }}
@@ -917,6 +923,7 @@ export const ContractInteraction = (props) => {
               fullWidth
               label="Interval Time"
               name="intervalTime"
+              type="number"
               onChange={handleInputChange}
               value={values.intervalTime}
               variant="outlined"
@@ -946,6 +953,7 @@ export const ContractInteraction = (props) => {
               fullWidth
               label="Eliminated Token Count"
               name="eliminatedTokenCount"
+              type="number"
               onChange={handleInputChange}
               value={values.eliminatedTokenCount}
               variant="outlined"

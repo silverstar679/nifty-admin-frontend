@@ -23,7 +23,6 @@ export const DashboardLayout = (props) => {
   useEffect(() => {
     async function getDrops() {
       const drops = await getAllDrops()
-      console.log(drops)
       dispatch(storeDrops(drops))
     }
     getDrops()

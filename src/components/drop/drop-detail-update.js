@@ -1,29 +1,52 @@
 import { useState } from 'react'
-import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  Grid,
+  TextField,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+} from '@mui/material'
 
-const states = [
+const networks = [
   {
-    value: 'alabama',
-    label: 'Alabama',
+    value: 'mainnet',
+    label: 'Mainnet',
   },
   {
-    value: 'new-york',
-    label: 'New York',
-  },
-  {
-    value: 'san-francisco',
-    label: 'San Francisco',
+    value: 'rinkeby',
+    label: 'Rinkeby',
   },
 ]
 
 export const DropDetailUpdate = (props) => {
   const [values, setValues] = useState({
-    firstName: 'Katarina',
-    lastName: 'Smith',
-    email: 'demo@devias.io',
-    phone: '',
-    state: 'Alabama',
-    country: 'USA',
+    address: props.drop.address,
+    artist: props.drop.artist,
+    created_at: props.drop.created_at,
+    creator: props.drop.creator,
+    defaultMetadata: props.drop.defaultMetadata,
+    defaultNFTUri: props.drop.defaultNFTUri,
+    description: props.drop.description,
+    dropDate: props.drop.dropDate,
+    extra: props.drop.extra,
+    name: props.drop.name,
+    network: props.drop.network,
+    polygonContractAddress: props.drop.polygonContractAddress,
+    prizeMetadata: props.drop.prizeMetadata,
+    queueId: props.drop.queueId,
+    type: props.drop.type,
+  })
+
+  const [checkboxValues, setCheckboxValues] = useState({
+    isDropEnded: props.drop.isDropEnded,
+    isBattleEnded: props.drop.isBattleEnded,
+    isDefaultNFTImage: props.drop.isDefaultNFTImage,
   })
 
   const handleInputChange = (event) => {
@@ -33,87 +56,164 @@ export const DropDetailUpdate = (props) => {
     })
   }
 
+  const handleCheckboxChange = (event) => {
+    setCheckboxValues({
+      ...checkboxValues,
+      [event.target.name]: event.target.checked,
+    })
+  }
+
   return (
     <form autoComplete="off" noValidate {...props}>
       <Card>
-        <CardHeader subheader="The information can be edited" title="Profile" />
+        <CardHeader subheader="The information can be edited" title="Drop Details" />
         <Divider />
         <CardContent>
           <Grid container spacing={3}>
             <Grid item md={6} xs={12}>
               <TextField
                 fullWidth
-                helperText="Please specify the first name"
-                label="First name"
-                name="firstName"
+                label="Name"
+                name="name"
                 onChange={handleInputChange}
-                required
-                value={values.firstName}
+                value={values.name}
                 variant="outlined"
               />
             </Grid>
             <Grid item md={6} xs={12}>
               <TextField
                 fullWidth
-                label="Last name"
-                name="lastName"
+                label="Address"
+                name="address"
                 onChange={handleInputChange}
-                required
-                value={values.lastName}
+                value={values.address}
                 variant="outlined"
               />
             </Grid>
             <Grid item md={6} xs={12}>
               <TextField
                 fullWidth
-                label="Email Address"
-                name="email"
+                label="Artist"
+                name="artist"
                 onChange={handleInputChange}
-                required
-                value={values.email}
+                value={values.artist}
                 variant="outlined"
               />
             </Grid>
             <Grid item md={6} xs={12}>
               <TextField
                 fullWidth
-                label="Phone Number"
-                name="phone"
+                label="Creator"
+                name="creator"
+                onChange={handleInputChange}
+                value={values.creator}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <TextField
+                fullWidth
+                label="Polygon Contract Address"
+                name="polygonContractAddress"
+                onChange={handleInputChange}
+                value={values.polygonContractAddress}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <TextField
+                fullWidth
+                label="Queue ID"
+                name="queueId"
                 onChange={handleInputChange}
                 type="number"
-                value={values.phone}
+                value={values.queueId}
                 variant="outlined"
               />
             </Grid>
             <Grid item md={6} xs={12}>
               <TextField
                 fullWidth
-                label="Country"
-                name="country"
+                label="Select Network"
+                name="network"
                 onChange={handleInputChange}
-                required
-                value={values.country}
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item md={6} xs={12}>
-              <TextField
-                fullWidth
-                label="Select State"
-                name="state"
-                onChange={handleInputChange}
-                required
                 select
                 SelectProps={{ native: true }}
-                value={values.state}
+                value={values.network}
                 variant="outlined"
               >
-                {states.map((option) => (
+                {networks.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
               </TextField>
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <TextField
+                fullWidth
+                label="Type"
+                name="type"
+                onChange={handleInputChange}
+                value={values.type}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <TextField
+                fullWidth
+                label="Queue ID"
+                name="queueId"
+                onChange={handleInputChange}
+                type="number"
+                value={values.queueId}
+                variant="outlined"
+              />
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="isDropEnded"
+                      checked={isDropEnded}
+                      onChange={handleCheckboxChange}
+                      inputProps={{ 'aria-label': 'controlled' }}
+                    />
+                  }
+                  label="Is Drop Ended?"
+                />
+              </FormGroup>
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="isBattleEnded"
+                      checked={isBattleEnded}
+                      onChange={handleCheckboxChange}
+                      inputProps={{ 'aria-label': 'controlled' }}
+                    />
+                  }
+                  label="Is Battle Ended?"
+                />
+              </FormGroup>
+            </Grid>
+            <Grid item md={6} xs={12}>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="isDefaultNFTImage"
+                      checked={isDefaultNFTImage}
+                      onChange={handleCheckboxChange}
+                      inputProps={{ 'aria-label': 'controlled' }}
+                    />
+                  }
+                  label="Is Default NFT Image?"
+                />
+              </FormGroup>
             </Grid>
           </Grid>
         </CardContent>
