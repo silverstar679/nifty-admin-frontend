@@ -116,7 +116,6 @@ export const DropDetailUpdate = (props) => {
       dropDate,
     }
     const updatedDrop = await updateDrop(props.drop._id, data)
-    console.log(updatedDrop)
   }
 
   return (

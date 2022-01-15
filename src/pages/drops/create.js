@@ -8,11 +8,6 @@ import { useRouter } from 'next/router'
 import _ from 'lodash'
 
 const DropCreatePage = () => {
-  const router = useRouter()
-  const address = router.query.address
-  const { status, drops } = useSelector(selectDrops)
-  const drop = drops && _.find(drops, { address: address })
-
   return (
     <>
       <Head>

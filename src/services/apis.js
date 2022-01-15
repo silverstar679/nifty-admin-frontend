@@ -30,3 +30,12 @@ export async function updateDrop(id, data) {
     console.error(error)
   }
 }
+
+export async function createDrop(data) {
+  try {
+    const response = await axios.post(`${baseURL}/drops`, data)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}

@@ -26,12 +26,7 @@ export const DropListToolbar = (props) => (
         Drops
       </Typography>
       <Box sx={{ m: 1 }}>
-        <NextLink
-          href={{
-            pathname: '/drops/[address]',
-            query: { address: drop.address },
-          }}
-        >
+        <NextLink href="/drops/create">
           <Button color="primary" variant="contained">
             Add Drops
           </Button>
