@@ -26,6 +26,8 @@ import EditIcon from '@mui/icons-material/Edit'
 import { displayAddress } from '../../utils/displayAddress'
 import NextLink from 'next/link'
 import { deleteDrop } from 'src/services/apis'
+import { InfoToast } from '../Toast'
+import { MESSAGE, SEVERITY } from '../../constants/toast'
 
 export const DropListResults = ({ drops, ...rest }) => {
   const [selectedDropIds, setSelectedDropIds] = useState([])
@@ -33,6 +35,9 @@ export const DropListResults = ({ drops, ...rest }) => {
   const [page, setPage] = useState(0)
   const [openDialog, setOpenDialog] = useState(false)
   const [selectedId, setSelectedId] = useState('')
+
+  const [isToast, setIsToast] = useState(false)
+  const [toastInfo, setToastInfo] = useState({})
 
   const handleClickOpen = (id) => {
     setOpenDialog(true)
@@ -44,8 +49,13 @@ export const DropListResults = ({ drops, ...rest }) => {
   }
 
   const handleDeleteDrop = async () => {
+    setIsToast(false)
+
     const deletedDrop = await deleteDrop(selectedId)
+
     setOpenDialog(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETED })
   }
 
   const handleSelectAll = (event) => {
@@ -90,6 +100,8 @@ export const DropListResults = ({ drops, ...rest }) => {
 
   return (
     <>
+      <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
+
       <Card {...rest}>
         <PerfectScrollbar>
           <Box sx={{ minWidth: 1050 }}>
