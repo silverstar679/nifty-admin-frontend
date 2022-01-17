@@ -29,4 +29,5 @@ export const MESSAGE = {
   PROGRESS: 'Transaction in progress',
   COMPLETED: 'Transaction completed',
   NOT_OWNER: 'You are not contract owner!',
+  NOT_ADMIN: 'You are not the admin!',
 }

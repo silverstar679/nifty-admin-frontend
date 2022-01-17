@@ -19,6 +19,7 @@ import DateTimePicker from '@mui/lab/DateTimePicker'
 import { createDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
+import { useEthereumWeb3React } from '../../hooks'
 
 const networks = [
   {
@@ -51,6 +52,8 @@ const types = [
 ]
 
 export const DropCreate = (props) => {
+  const { active, account, chainId } = useEthereumWeb3React()
+
   const [values, setValues] = useState({
     address: '',
     artist: '',
@@ -101,32 +104,38 @@ export const DropCreate = (props) => {
   }
 
   const handleCreateDrop = async () => {
-    const data = {
-      name: values.name,
-      address: values.address,
-      artist: values.artist,
-      creator: values.creator,
-      type: values.type,
-      network: values.network,
-      polygonContractAddress: values.polygonContractAddress,
-      queueId: values.queueId,
-      description: values.description,
-      defaultMetadata: values.defaultMetadata,
-      prizeMetadata: values.prizeMetadata,
-      defaultNFTUri: values.defaultNFTUri,
-      extra: JSON.parse(values.extra),
-      created_at: values.created_at,
+    if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
+      const data = {
+        name: values.name,
+        address: values.address,
+        artist: values.artist,
+        creator: values.creator,
+        type: values.type,
+        network: values.network,
+        polygonContractAddress: values.polygonContractAddress,
+        queueId: values.queueId,
+        description: values.description,
+        defaultMetadata: values.defaultMetadata,
+        prizeMetadata: values.prizeMetadata,
+        defaultNFTUri: values.defaultNFTUri,
+        extra: JSON.parse(values.extra),
+        created_at: values.created_at,
 
-      isDropEnded: checkboxValues.isDropEnded,
-      isBattleEnded: checkboxValues.isBattleEnded,
-      isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
+        isDropEnded: checkboxValues.isDropEnded,
+        isBattleEnded: checkboxValues.isBattleEnded,
+        isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
 
-      dropDate,
+        dropDate,
+      }
+      setIsToast(false)
+      const createdDrop = await createDrop(data)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_CREATED })
+    } else {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
     }
-    setIsToast(false)
-    const createdDrop = await createDrop(data)
-    setIsToast(true)
-    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_CREATED })
   }
 
   return (

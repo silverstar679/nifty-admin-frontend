@@ -29,8 +29,11 @@ import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
+import { useEthereumWeb3React } from '../../hooks'
 
 export const DropListResults = () => {
+  const { active, account, chainId } = useEthereumWeb3React()
+
   const [selectedDropIds, setSelectedDropIds] = useState([])
   const [limit, setLimit] = useState(10)
   const [page, setPage] = useState(0)
@@ -64,18 +67,24 @@ export const DropListResults = () => {
   }
 
   const handleDeleteDrop = async () => {
-    setIsToast(false)
+    if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
+      setIsToast(false)
 
-    const deletedDrop = await deleteDrop(selectedId)
+      const deletedDrop = await deleteDrop(selectedId)
 
-    const filteredDrops = _.filter(drops, function (o) {
-      return o._id !== selectedId
-    })
-    setDrops(filteredDrops)
+      const filteredDrops = _.filter(drops, function (o) {
+        return o._id !== selectedId
+      })
+      setDrops(filteredDrops)
 
-    setOpenDialog(false)
-    setIsToast(true)
-    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETED })
+      setOpenDialog(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETED })
+    } else {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
+    }
   }
 
   const handleSelectAll = (event) => {
