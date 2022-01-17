@@ -25,4 +25,8 @@ export const MESSAGE = {
   DROP_CREATED: 'Drop created successfully',
   DROP_UPDATED: 'Drop updated successfully',
   DROP_DELETED: 'Drop deleted successfully',
+
+  PROGRESS: 'Transaction in progress',
+  COMPLETED: 'Transaction completed',
+  NOT_OWNER: 'You are not contract owner!',
 }

@@ -3,12 +3,8 @@ import { Box, Container } from '@mui/material'
 import { DropListResults } from '../../components/drop/drop-list-results'
 import { DropListToolbar } from '../../components/drop/drop-list-toolbar'
 import { DashboardLayout } from '../../components/dashboard-layout'
-import { useSelector } from 'react-redux'
-import { selectDrops } from '../../store/drops/dropsSlice'
 
 const Drops = () => {
-  const { status, drops } = useSelector(selectDrops)
-
   return (
     <>
       <Head>
@@ -24,7 +20,7 @@ const Drops = () => {
         <Container maxWidth={false}>
           <DropListToolbar />
           <Box sx={{ mt: 3 }}>
-            <DropListResults drops={drops} />
+            <DropListResults />
           </Box>
         </Container>
       </Box>

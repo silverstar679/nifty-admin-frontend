@@ -11,18 +11,23 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 import _ from 'lodash'
+import { TransactionInfoToast } from '../Toast'
+import { MESSAGE, SEVERITY } from '../../constants/toast'
 
 export const ContractInteraction = (props) => {
   const battleAddress = props.drop.address
   const polygonContractAddress = props.drop.polygonContractAddress
   const queueId = props.drop.queueId
   const type = props.drop.type
-
+  const [isToast, setIsToast] = useState(false)
+  const [toastInfo, setToastInfo] = useState({})
   const { active, account, chainId } = useEthereumWeb3React()
+
+  const [loading, setLoading] = useState(false)
 
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
-  const [battleState, setBattleState] = useState(0)
+  const [battleState, setBattleState] = useState(null)
   const [owner, setOwner] = useState('')
   const [inPlay, setInPlay] = useState([])
   const [isBattleAdded, setIsBattleAdded] = useState(false)
@@ -50,13 +55,24 @@ export const ContractInteraction = (props) => {
     ethAmountPolyNet: 0,
     erc20AmountPolyNet: 0,
     erc20TokenAddressPolyNet: '',
-    intervalTime: 5,
-    eliminatedTokenCount: 1,
   })
 
+  const [valuesPoly, setValuesPoly] = useState({
+    intervalTime: 0,
+    eliminatedTokenCount: 0,
+  })
+  const handleClose = () => {
+    setIsToast(false)
+  }
   const handleInputChange = (event) => {
     setValues({
       ...values,
+      [event.target.name]: event.target.value,
+    })
+  }
+  const handleInputChangePoly = (event) => {
+    setValuesPoly({
+      ...valuesPoly,
       [event.target.name]: event.target.value,
     })
   }
@@ -133,21 +149,12 @@ export const ContractInteraction = (props) => {
           unitsPerTransaction,
           owner,
         ]) => {
-          setValues({
-            ...values,
-            price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
-            startingTime: BigNumber.from(startingTime).toNumber(),
-            baseURI,
-            prizeTokenURI,
-            maxSupply: BigNumber.from(maxSupply).toNumber(),
-            unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
-          })
           setOwner(owner)
           setBattleState(battleState)
           if (battleState !== 0 && queueId) {
             Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
-              setValues({
-                ...values,
+              setValuesPoly({
+                ...valuesPoly,
                 intervalTime: BigNumber.from(battleInfo.intervalTime).toNumber(),
                 eliminatedTokenCount: BigNumber.from(battleInfo.eliminatedTokenCount).toNumber(),
               })
@@ -161,14 +168,30 @@ export const ContractInteraction = (props) => {
                     ethereumContract,
                     baseURI,
                     parseInt(totalDefaultNFTTypeCount, 10)
-                  ))().then((e) => {})
+                  ))().then((e) => {
+                  setValues({
+                    ...values,
+                    price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
+                    startingTime: BigNumber.from(startingTime).toNumber(),
+                    baseURI,
+                    prizeTokenURI,
+                    maxSupply: BigNumber.from(maxSupply).toNumber(),
+                    unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
+                  })
+                })
               }
             )
           } else {
             Promise.all([ethereumContract.defaultTokenURI()]).then(([defaultTokenURI]) => {
               setValues({
                 ...values,
+                price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
+                startingTime: BigNumber.from(startingTime).toNumber(),
+                baseURI,
                 defaultTokenURI,
+                prizeTokenURI,
+                maxSupply: BigNumber.from(maxSupply).toNumber(),
+                unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
               })
             })
           }
@@ -207,844 +230,957 @@ export const ContractInteraction = (props) => {
         }
       })
     }
-    return () => {
-      try {
-        if (
-          ethereumContract &&
-          ethereumContract.provider &&
-          polygonContract &&
-          polygonContract.provider
-        ) {
-          if (!isOldVersion) {
-            ethereumContract.removeListener('BattleStarted')
-            polygonContract.removeListener('BattleAdded')
-          }
-        }
-      } catch (e) {}
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract])
+
+  console.log(values.price)
 
   const startBattle = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.startBattle()
       await tx.wait()
-      console.log('Battle Started on Ethereum: ', tx.hash)
       if (inPlay.length !== 0) {
         const txPoly = await polygonContractWithSigner.addToBattleQueue(
           battleAddress,
-          values.intervalTime,
+          valuesPoly.intervalTime,
           inPlay,
-          values.eliminatedTokenCount
+          valuesPoly.eliminatedTokenCount
         )
         await txPoly.wait()
-        console.log('Battle Started on Polygon: ', txPoly.hash)
+        setIsToast(false)
+        setIsToast(true)
+        setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
       }
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const withdrawEthEthNet = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountEthNet)
       await tx.wait()
-      console.log('Withdraw ETH successfully: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const withdrawERC20EthNet = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.withdrawERC20Token(
         values.erc20TokenAddressEthNet,
         values.erc20AmountEthNet
       )
       await tx.wait()
-      console.log('Withdraw ERC20 successfully: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const withdrawEthPolyNet = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountPolyNet)
       await tx.wait()
-      console.log('Withdraw ETH successfully: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const withdrawERC20PolyNet = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.withdrawERC20Token(
         values.erc20TokenAddressPolyNet,
         values.erc20AmountPolyNet
       )
       await tx.wait()
-      console.log('Withdraw ERC20 successfully: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateNFTPrice = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.setPrice(ethers.utils.parseEther(values.price))
       await tx.wait()
-      console.log('Updated NFT Price: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateBaseURI = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.setBaseURI(values.baseURI)
       await tx.wait()
-      console.log('Updated Base URI: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateDefaultTokenURI = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.setDefaultTokenURI(values.defaultTokenURI)
       await tx.wait()
-      console.log('Updated Default Token URI: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updatePrizeTokenURI = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.setPrizeTokenURI(values.prizeTokenURI)
       await tx.wait()
-      console.log('Updated Prize Token URI: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateMaxSupply = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.setMaxSupply(values.maxSupply)
       await tx.wait()
-      console.log('Updated Max Supply: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateUnitsPerTransaction = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.setUnitsPerTransaction(values.unitsPerTransaction)
       await tx.wait()
-      console.log('Updated Units per Transaction: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateDropTime = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.setStartingTime(values.startingTime)
       await tx.wait()
-      console.log('Updated Drop Time: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateIntervalTime = async () => {
     if (account === owner) {
-      const tx = await polygonContractWithSigner.setBattleIntervalTime(queueId, values.intervalTime)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      const tx = await polygonContractWithSigner.setBattleIntervalTime(
+        queueId,
+        valuesPoly.intervalTime
+      )
       await tx.wait()
-      console.log('Updated Interval Time: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateEliminatedTokenCount = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await polygonContractWithSigner.setEliminatedTokenCount(
         queueId,
-        values.eliminatedTokenCount
+        valuesPoly.eliminatedTokenCount
       )
       await tx.wait()
-      console.log('Updated Interval Time: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const addDefaultToken = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.addTokenURI(
         values.defaultTokenURIRandom,
         values.defaultTokenCountRandom
       )
       await tx.wait()
-      console.log('Added Default Token URI: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const removeDefaultToken = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.removeTokenURI(values.removableTokenIndex)
       await tx.wait()
-      console.log('Removed Default Token URI: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   const updateDefaultTokenCount = async () => {
     if (account === owner) {
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.addTokenURI(
         values.defaultTokenURIRandomUpdate,
         values.defaultTokenCountRandomUpdate
       )
       await tx.wait()
-      console.log('Updated Default Token Count: ', tx.hash)
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
     } else {
-      console.log('you are not contract owner')
+      setIsToast(false)
+      setIsToast(true)
+      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
     }
   }
 
   return (
-    <Grid container spacing={1}>
-      <Grid item xs={12}>
-        <Card>
-          <CardHeader
-            subheader="Queue ID must be defined in DB before starting"
-            title="Start Battle"
-            sx={{ py: 1 }}
-          />
-          <Divider />
-          <CardContent>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Queue ID"
-                  required
-                  InputProps={{
-                    readOnly: true,
-                  }}
-                  type="number"
-                  value={queueId}
-                  variant="outlined"
-                />
-              </Grid>
+    <>
+      <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Interval Time"
-                  name="intervalTime"
-                  type="number"
-                  onChange={handleInputChange}
-                  value={values.intervalTime}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Eliminated Token Count"
-                  name="eliminatedTokenCount"
-                  type="number"
-                  onChange={handleInputChange}
-                  value={values.eliminatedTokenCount}
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>
-          </CardContent>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={startBattle}>
-              Start
-            </Button>
-          </Box>
-        </Card>
-      </Grid>
-
-      <Grid item md={6}>
-        <Card>
-          <CardHeader title="Ethereum Contract Functionalities" />
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set NFT Price" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="NFT Price"
-              name="price"
-              onChange={handleInputChange}
-              value={values.price}
-              variant="outlined"
+      <Grid container spacing={1}>
+        <Grid item xs={12}>
+          <Card>
+            <CardHeader
+              subheader="Queue ID must be defined in DB before starting"
+              title="Start Battle"
+              sx={{ py: 1 }}
             />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateNFTPrice}>
-              Update
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Drop Time" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Drop Time"
-              name="startingTime"
-              onChange={handleInputChange}
-              value={values.startingTime}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateDropTime}>
-              Update
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Base URI" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Base URI"
-              name="baseURI"
-              onChange={handleInputChange}
-              value={values.baseURI}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateBaseURI}>
-              Update
-            </Button>
-          </Box>
-        </Card>
-        {type !== 'random' ? (
-          <>
-            <Box sx={{ py: 1 }} />
-
-            <Card>
-              <CardHeader title="Set Default Token URI" sx={{ py: 1 }} />
-              <Divider />
-              <CardContent>
-                <TextField
-                  fullWidth
-                  label="Default URI"
-                  name="defaultTokenURI"
-                  onChange={handleInputChange}
-                  value={values.defaultTokenURI}
-                  variant="outlined"
-                />
-              </CardContent>
-              <Divider />
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  p: 2,
-                }}
-              >
-                <Button color="primary" variant="contained" onClick={updateDefaultTokenURI}>
-                  Update
-                </Button>
-              </Box>
-            </Card>
-          </>
-        ) : (
-          <>
-            <Box sx={{ py: 1 }} />
-
-            <Card>
-              <CardHeader title="Add Default Token" sx={{ py: 1 }} />
-              <Divider />
-              <CardContent>
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Default Token URI"
-                      name="defaultTokenURIRandom"
-                      onChange={handleInputChange}
-                      value={values.defaultTokenURIRandom}
-                      variant="outlined"
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Default Token Count"
-                      name="defaultTokenCountRandom"
-                      onChange={handleInputChange}
-                      value={values.defaultTokenCountRandom}
-                      variant="outlined"
-                    />
-                  </Grid>
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Queue ID"
+                    required
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    type="number"
+                    value={queueId}
+                    variant="outlined"
+                  />
                 </Grid>
-              </CardContent>
-              <Divider />
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  p: 2,
-                }}
-              >
-                <Button color="primary" variant="contained" onClick={addDefaultToken}>
-                  Add
-                </Button>
-              </Box>
-            </Card>
 
-            <Box sx={{ py: 1 }} />
-
-            <Card>
-              <CardHeader title="Remove Default Token URI" sx={{ py: 1 }} />
-              <Divider />
-              <CardContent>
-                <TextField
-                  fullWidth
-                  label="Default Token Index"
-                  name="removableTokenIndex"
-                  onChange={handleInputChange}
-                  value={values.removableTokenIndex}
-                  variant="outlined"
-                />
-              </CardContent>
-              <Divider />
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  p: 2,
-                }}
-              >
-                <Button color="primary" variant="contained" onClick={removeDefaultToken}>
-                  Remove
-                </Button>
-              </Box>
-            </Card>
-
-            <Box sx={{ py: 1 }} />
-
-            <Card>
-              <CardHeader title="Update Default Token Count" sx={{ py: 1 }} />
-              <Divider />
-              <CardContent>
-                <Grid container spacing={3}>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Default Token URI"
-                      name="defaultTokenURIRandomUpdate"
-                      onChange={handleInputChange}
-                      value={values.defaultTokenURIRandomUpdate}
-                      variant="outlined"
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <TextField
-                      fullWidth
-                      label="Default Token Count"
-                      name="defaultTokenCountRandomUpdate"
-                      onChange={handleInputChange}
-                      value={values.defaultTokenCountRandomUpdate}
-                      variant="outlined"
-                    />
-                  </Grid>
+                <Grid item md={6} xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Interval Time"
+                    name="intervalTime"
+                    type="number"
+                    onChange={handleInputChangePoly}
+                    value={valuesPoly.intervalTime}
+                    variant="outlined"
+                  />
                 </Grid>
-              </CardContent>
-              <Divider />
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  p: 2,
-                }}
-              >
-                <Button color="primary" variant="contained" onClick={updateDefaultTokenCount}>
-                  Update
-                </Button>
-              </Box>
-            </Card>
-          </>
-        )}
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Prize Token URI" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Prize URI"
-              name="prizeTokenURI"
-              onChange={handleInputChange}
-              value={values.prizeTokenURI}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updatePrizeTokenURI}>
-              Update
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Maximum Purchaseable Amount" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Max Purchaseable Amount"
-              name="maxSupply"
-              type="number"
-              onChange={handleInputChange}
-              value={values.maxSupply}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateMaxSupply}>
-              Update
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Units per Transaction" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Units per Transaction"
-              name="unitsPerTransaction"
-              type="number"
-              onChange={handleInputChange}
-              value={values.unitsPerTransaction}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateUnitsPerTransaction}>
-              Update
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Withdraw Eth" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Eth Amount"
-              name="ethAmountEthNet"
-              onChange={handleInputChange}
-              value={values.ethAmountEthNet}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={withdrawEthEthNet}>
-              Withdraw ETH
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Withdraw ERC20" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="ERC20 Token Address"
-                  name="erc20TokenAddressEthNet"
-                  onChange={handleInputChange}
-                  value={values.erc20TokenAddressEthNet}
-                  variant="outlined"
-                />
+                <Grid item md={6} xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Eliminated Token Count"
+                    name="eliminatedTokenCount"
+                    type="number"
+                    onChange={handleInputChangePoly}
+                    value={valuesPoly.eliminatedTokenCount}
+                    variant="outlined"
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="ERC20 Amount"
-                  name="erc20AmountEthNet"
-                  onChange={handleInputChange}
-                  value={values.erc20AmountEthNet}
-                  variant="outlined"
-                />
-              </Grid>
-            </Grid>
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={withdrawERC20EthNet}>
-              Withdraw ERC20
-            </Button>
-          </Box>
-        </Card>
-      </Grid>
-      <Grid item md={6}>
-        <Card>
-          <CardHeader
-            title="Polygon Contract Functionalities"
-            subheader="Queue ID must be defined in DB before updating"
-          />
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Queue ID" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Queue ID"
-              required
-              type="number"
-              InputProps={{
-                readOnly: true,
+            </CardContent>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
               }}
-              value={queueId}
-              variant="outlined"
-            />
-          </CardContent>
-        </Card>
+            >
+              <Button color="primary" variant="contained" onClick={startBattle}>
+                Start
+              </Button>
+            </Box>
+          </Card>
+        </Grid>
 
-        <Box sx={{ py: 1 }} />
+        <Grid item md={6}>
+          <Card>
+            <CardHeader title="Ethereum Contract Functionalities" />
+          </Card>
 
-        <Card>
-          <CardHeader title="Set Interval Time" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Interval Time"
-              name="intervalTime"
-              type="number"
-              onChange={handleInputChange}
-              value={values.intervalTime}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateIntervalTime}>
-              Update
-            </Button>
-          </Box>
-        </Card>
+          <Box sx={{ py: 1 }} />
 
-        <Box sx={{ py: 1 }} />
+          <Card>
+            <CardHeader title="Set NFT Price" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="NFT Price"
+                name="price"
+                onChange={handleInputChange}
+                value={values.price}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateNFTPrice}>
+                Update
+              </Button>
+            </Box>
+          </Card>
 
-        <Card>
-          <CardHeader title="Set Eliminated Token Count" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Eliminated Token Count"
-              name="eliminatedTokenCount"
-              type="number"
-              onChange={handleInputChange}
-              value={values.eliminatedTokenCount}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={updateEliminatedTokenCount}>
-              Update
-            </Button>
-          </Box>
-        </Card>
+          <Box sx={{ py: 1 }} />
 
-        <Box sx={{ py: 1 }} />
+          <Card>
+            <CardHeader title="Set Drop Time" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Drop Time"
+                name="startingTime"
+                onChange={handleInputChange}
+                value={values.startingTime}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateDropTime}>
+                Update
+              </Button>
+            </Box>
+          </Card>
 
-        <Card>
-          <CardHeader title="Withdraw Eth" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Eth Amount"
-              name="ethAmountPolyNet"
-              onChange={handleInputChange}
-              value={values.ethAmountPolyNet}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={withdrawEthPolyNet}>
-              Withdraw ETH
-            </Button>
-          </Box>
-        </Card>
+          <Box sx={{ py: 1 }} />
 
-        <Box sx={{ py: 1 }} />
+          <Card>
+            <CardHeader title="Set Base URI" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Base URI"
+                name="baseURI"
+                onChange={handleInputChange}
+                value={values.baseURI}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateBaseURI}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+          {type !== 'random' ? (
+            <>
+              <Box sx={{ py: 1 }} />
 
-        <Card>
-          <CardHeader title="Withdraw ERC20" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="ERC20 Token Address"
-                  name="erc20TokenAddressPolyNet"
-                  onChange={handleInputChange}
-                  value={values.erc20TokenAddressPolyNet}
-                  variant="outlined"
-                />
+              <Card>
+                <CardHeader title="Set Default Token URI" sx={{ py: 1 }} />
+                <Divider />
+                <CardContent>
+                  <TextField
+                    fullWidth
+                    label="Default URI"
+                    name="defaultTokenURI"
+                    onChange={handleInputChange}
+                    value={values.defaultTokenURI}
+                    variant="outlined"
+                  />
+                </CardContent>
+                <Divider />
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    p: 2,
+                  }}
+                >
+                  <Button color="primary" variant="contained" onClick={updateDefaultTokenURI}>
+                    Update
+                  </Button>
+                </Box>
+              </Card>
+            </>
+          ) : (
+            <>
+              <Box sx={{ py: 1 }} />
+
+              <Card>
+                <CardHeader title="Add Default Token" sx={{ py: 1 }} />
+                <Divider />
+                <CardContent>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Default Token URI"
+                        name="defaultTokenURIRandom"
+                        onChange={handleInputChange}
+                        value={values.defaultTokenURIRandom}
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Default Token Count"
+                        name="defaultTokenCountRandom"
+                        onChange={handleInputChange}
+                        value={values.defaultTokenCountRandom}
+                        variant="outlined"
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+                <Divider />
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    p: 2,
+                  }}
+                >
+                  <Button color="primary" variant="contained" onClick={addDefaultToken}>
+                    Add
+                  </Button>
+                </Box>
+              </Card>
+
+              <Box sx={{ py: 1 }} />
+
+              <Card>
+                <CardHeader title="Remove Default Token URI" sx={{ py: 1 }} />
+                <Divider />
+                <CardContent>
+                  <TextField
+                    fullWidth
+                    label="Default Token Index"
+                    name="removableTokenIndex"
+                    onChange={handleInputChange}
+                    value={values.removableTokenIndex}
+                    variant="outlined"
+                  />
+                </CardContent>
+                <Divider />
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    p: 2,
+                  }}
+                >
+                  <Button color="primary" variant="contained" onClick={removeDefaultToken}>
+                    Remove
+                  </Button>
+                </Box>
+              </Card>
+
+              <Box sx={{ py: 1 }} />
+
+              <Card>
+                <CardHeader title="Update Default Token Count" sx={{ py: 1 }} />
+                <Divider />
+                <CardContent>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Default Token URI"
+                        name="defaultTokenURIRandomUpdate"
+                        onChange={handleInputChange}
+                        value={values.defaultTokenURIRandomUpdate}
+                        variant="outlined"
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Default Token Count"
+                        name="defaultTokenCountRandomUpdate"
+                        onChange={handleInputChange}
+                        value={values.defaultTokenCountRandomUpdate}
+                        variant="outlined"
+                      />
+                    </Grid>
+                  </Grid>
+                </CardContent>
+                <Divider />
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    p: 2,
+                  }}
+                >
+                  <Button color="primary" variant="contained" onClick={updateDefaultTokenCount}>
+                    Update
+                  </Button>
+                </Box>
+              </Card>
+            </>
+          )}
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set Prize Token URI" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Prize URI"
+                name="prizeTokenURI"
+                onChange={handleInputChange}
+                value={values.prizeTokenURI}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updatePrizeTokenURI}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set Maximum Purchaseable Amount" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Max Purchaseable Amount"
+                name="maxSupply"
+                type="number"
+                onChange={handleInputChange}
+                value={values.maxSupply}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateMaxSupply}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set Units per Transaction" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Units per Transaction"
+                name="unitsPerTransaction"
+                type="number"
+                onChange={handleInputChange}
+                value={values.unitsPerTransaction}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateUnitsPerTransaction}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Withdraw Eth" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Eth Amount"
+                name="ethAmountEthNet"
+                onChange={handleInputChange}
+                value={values.ethAmountEthNet}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={withdrawEthEthNet}>
+                Withdraw ETH
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Withdraw ERC20" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ERC20 Token Address"
+                    name="erc20TokenAddressEthNet"
+                    onChange={handleInputChange}
+                    value={values.erc20TokenAddressEthNet}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ERC20 Amount"
+                    name="erc20AmountEthNet"
+                    onChange={handleInputChange}
+                    value={values.erc20AmountEthNet}
+                    variant="outlined"
+                  />
+                </Grid>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="ERC20 Amount"
-                  name="erc20AmountPolyNet"
-                  onChange={handleInputChange}
-                  value={values.erc20AmountPolyNet}
-                  variant="outlined"
-                />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={withdrawERC20EthNet}>
+                Withdraw ERC20
+              </Button>
+            </Box>
+          </Card>
+        </Grid>
+        <Grid item md={6}>
+          <Card>
+            <CardHeader
+              title="Polygon Contract Functionalities"
+              subheader="Queue ID must be defined in DB before updating"
+            />
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Queue ID" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Queue ID"
+                required
+                type="number"
+                InputProps={{
+                  readOnly: true,
+                }}
+                value={queueId}
+                variant="outlined"
+              />
+            </CardContent>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set Interval Time" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Interval Time"
+                name="intervalTime"
+                type="number"
+                onChange={handleInputChangePoly}
+                value={valuesPoly.intervalTime}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateIntervalTime}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set Eliminated Token Count" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Eliminated Token Count"
+                name="eliminatedTokenCount"
+                type="number"
+                onChange={handleInputChangePoly}
+                value={valuesPoly.eliminatedTokenCount}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateEliminatedTokenCount}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Withdraw Eth" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Eth Amount"
+                name="ethAmountPolyNet"
+                onChange={handleInputChange}
+                value={values.ethAmountPolyNet}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={withdrawEthPolyNet}>
+                Withdraw ETH
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Withdraw ERC20" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ERC20 Token Address"
+                    name="erc20TokenAddressPolyNet"
+                    onChange={handleInputChange}
+                    value={values.erc20TokenAddressPolyNet}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="ERC20 Amount"
+                    name="erc20AmountPolyNet"
+                    onChange={handleInputChange}
+                    value={values.erc20AmountPolyNet}
+                    variant="outlined"
+                  />
+                </Grid>
               </Grid>
-            </Grid>
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={withdrawERC20PolyNet}>
-              Withdraw ERC20
-            </Button>
-          </Box>
-        </Card>
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={withdrawERC20PolyNet}>
+                Withdraw ERC20
+              </Button>
+            </Box>
+          </Card>
+        </Grid>
       </Grid>
-    </Grid>
+    </>
   )
 }

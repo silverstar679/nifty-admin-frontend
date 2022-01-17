@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PerfectScrollbar from 'react-perfect-scrollbar'
 import PropTypes from 'prop-types'
 import { format } from 'date-fns'
@@ -28,8 +28,9 @@ import NextLink from 'next/link'
 import { deleteDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
+import { getAllDrops } from '../../services/apis'
 
-export const DropListResults = ({ drops, ...rest }) => {
+export const DropListResults = () => {
   const [selectedDropIds, setSelectedDropIds] = useState([])
   const [limit, setLimit] = useState(10)
   const [page, setPage] = useState(0)
@@ -38,6 +39,16 @@ export const DropListResults = ({ drops, ...rest }) => {
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
+
+  const [drops, setDrops] = useState([])
+
+  useEffect(() => {
+    async function getDrops() {
+      const drops = await getAllDrops()
+      setDrops(drops)
+    }
+    getDrops()
+  }, [])
 
   const handleClickOpen = (id) => {
     setOpenDialog(true)
@@ -106,7 +117,7 @@ export const DropListResults = ({ drops, ...rest }) => {
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
-      <Card {...rest}>
+      <Card>
         <PerfectScrollbar>
           <Box sx={{ minWidth: 1050 }}>
             <Table>
@@ -221,8 +232,4 @@ export const DropListResults = ({ drops, ...rest }) => {
       </Dialog>
     </>
   )
-}
-
-DropListResults.propTypes = {
-  drops: PropTypes.array.isRequired,
 }

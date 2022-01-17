@@ -34,3 +34,26 @@ export const InfoToast = (props) => {
     </Snackbar>
   )
 }
+
+export const TransactionInfoToast = (props) => {
+  const handleClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return
+    }
+    props.handleClose()
+  }
+
+  return (
+    <Snackbar
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      open={props.isToast}
+      onClose={handleClose}
+      sx={{ mt: 6 }}
+      TransitionComponent={Transition}
+    >
+      <Alert onClose={handleClose} severity={props.info.severity} sx={{ width: '100%' }}>
+        {props.info.message}
+      </Alert>
+    </Snackbar>
+  )
+}

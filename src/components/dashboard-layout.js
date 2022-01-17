@@ -1,11 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Box } from '@mui/material'
 import { styled } from '@mui/material/styles'
 import { DashboardNavbar } from './dashboard-navbar'
 import { DashboardSidebar } from './dashboard-sidebar'
-import { getAllDrops } from '../services/apis'
-import { useDispatch } from 'react-redux'
-import { storeDrops } from '../store/drops/dropsSlice'
 
 const DashboardLayoutRoot = styled('div')(({ theme }) => ({
   display: 'flex',
@@ -18,16 +15,6 @@ const DashboardLayoutRoot = styled('div')(({ theme }) => ({
 }))
 
 export const DashboardLayout = (props) => {
-  const dispatch = useDispatch()
-
-  useEffect(() => {
-    async function getDrops() {
-      const drops = await getAllDrops()
-      dispatch(storeDrops(drops))
-    }
-    getDrops()
-  }, [dispatch])
-
   const { children } = props
   const [isSidebarOpen, setSidebarOpen] = useState(true)
 
