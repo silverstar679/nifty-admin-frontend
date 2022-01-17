@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import PerfectScrollbar from 'react-perfect-scrollbar'
-import PropTypes from 'prop-types'
 import { format } from 'date-fns'
 import {
   Box,
@@ -29,6 +28,7 @@ import { deleteDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { getAllDrops } from '../../services/apis'
+import _ from 'lodash'
 
 export const DropListResults = () => {
   const [selectedDropIds, setSelectedDropIds] = useState([])
@@ -67,6 +67,11 @@ export const DropListResults = () => {
     setIsToast(false)
 
     const deletedDrop = await deleteDrop(selectedId)
+
+    const filteredDrops = _.filter(drops, function (o) {
+      return o._id !== selectedId
+    })
+    setDrops(filteredDrops)
 
     setOpenDialog(false)
     setIsToast(true)
