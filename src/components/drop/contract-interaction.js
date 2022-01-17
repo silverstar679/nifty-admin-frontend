@@ -233,8 +233,6 @@ export const ContractInteraction = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract])
 
-  console.log(values.price)
-
   const startBattle = async () => {
     if (account === owner) {
       setIsToast(false)
