@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
@@ -57,10 +57,21 @@ export const ContractInteraction = (props) => {
     erc20TokenAddressPolyNet: '',
   })
 
-  const [valuesPoly, setValuesPoly] = useState({
-    intervalTime: 0,
-    eliminatedTokenCount: 0,
-  })
+  const [intervalTime, _setIntervalTime] = useState(0)
+  const [eliminatedTokenCount, _setEliminatedTokenCount] = useState(0)
+
+  const intervalTimeRef = useRef(intervalTime)
+  const setIntervalTime = (x) => {
+    intervalTimeRef.current = x // keep updated
+    _setIntervalTime(x)
+  }
+
+  const eliminatedTokenCountRef = useRef(eliminatedTokenCount)
+  const setEliminatedTokenCount = (x) => {
+    eliminatedTokenCountRef.current = x // keep updated
+    _setEliminatedTokenCount(x)
+  }
+
   const handleClose = () => {
     setIsToast(false)
   }
@@ -70,11 +81,11 @@ export const ContractInteraction = (props) => {
       [event.target.name]: event.target.value,
     })
   }
-  const handleInputChangePoly = (event) => {
-    setValuesPoly({
-      ...valuesPoly,
-      [event.target.name]: event.target.value,
-    })
+  const handleIntervalTimeChange = (event) => {
+    setIntervalTime(event.target.value)
+  }
+  const handleEliminatedTokenCountChange = (event) => {
+    setEliminatedTokenCount(event.target.value)
   }
 
   useEffect(() => {
@@ -101,13 +112,19 @@ export const ContractInteraction = (props) => {
     parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID),
     process.env.NEXT_PUBLIC_INFURA_API_KEY
   )
+  const polygonProvider = new ethers.providers.AlchemyProvider(
+    parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID),
+    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+  )
   const ethereumContract = useEthereumNetworkContract(battleAddress, ethereumAbi, true)
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
 
   const wallet = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY, provider)
+  const polygonWallet = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY, polygonProvider)
   // const ethereumInjectedContract = useEthereumContract(battleAddress, ethereumAbi, true)
   const ethereumContractWithSigner = wallet && ethereumContract && ethereumContract.connect(wallet)
-  const polygonContractWithSigner = wallet && polygonContract && polygonContract.connect(wallet)
+  const polygonContractWithSigner =
+    wallet && polygonContract && polygonContract.connect(polygonWallet)
 
   useEffect(() => {
     async function getDefaultTokenURIs(_ethereumContract, _index) {
@@ -153,11 +170,8 @@ export const ContractInteraction = (props) => {
           setBattleState(battleState)
           if (battleState !== 0 && queueId) {
             Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
-              setValuesPoly({
-                ...valuesPoly,
-                intervalTime: BigNumber.from(battleInfo.intervalTime).toNumber(),
-                eliminatedTokenCount: BigNumber.from(battleInfo.eliminatedTokenCount).toNumber(),
-              })
+              setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
+              setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
             })
           }
           if (type === 'random') {
@@ -209,6 +223,20 @@ export const ContractInteraction = (props) => {
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
+          ;(async () => {
+            const txPoly = await polygonContractWithSigner.addToBattleQueue(
+              battleAddressEmitted,
+              intervalTimeRef.current,
+              inPlayEmitted,
+              eliminatedTokenCountRef.current
+            )
+            console.log(txPoly.hash)
+            await txPoly.wait()
+
+            setIsToast(false)
+            setIsToast(true)
+            setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+          })().then((e) => {})
           setInPlay(inPlayEmitted)
           setBattleState(1)
         }
@@ -239,19 +267,8 @@ export const ContractInteraction = (props) => {
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await ethereumContractWithSigner.startBattle()
+      console.log('Ethereum', tx.hash)
       await tx.wait()
-      if (inPlay.length !== 0) {
-        const txPoly = await polygonContractWithSigner.addToBattleQueue(
-          battleAddress,
-          valuesPoly.intervalTime,
-          inPlay,
-          valuesPoly.eliminatedTokenCount
-        )
-        await txPoly.wait()
-        setIsToast(false)
-        setIsToast(true)
-        setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
-      }
     } else {
       setIsToast(false)
       setIsToast(true)
@@ -459,7 +476,7 @@ export const ContractInteraction = (props) => {
       setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await polygonContractWithSigner.setBattleIntervalTime(
         queueId,
-        valuesPoly.intervalTime
+        intervalTimeRef.current
       )
       await tx.wait()
       setIsToast(false)
@@ -479,7 +496,7 @@ export const ContractInteraction = (props) => {
       setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
       const tx = await polygonContractWithSigner.setEliminatedTokenCount(
         queueId,
-        valuesPoly.eliminatedTokenCount
+        eliminatedTokenCountRef.current
       )
       await tx.wait()
       setIsToast(false)
@@ -584,8 +601,8 @@ export const ContractInteraction = (props) => {
                     label="Interval Time"
                     name="intervalTime"
                     type="number"
-                    onChange={handleInputChangePoly}
-                    value={valuesPoly.intervalTime}
+                    onChange={handleIntervalTimeChange}
+                    value={intervalTimeRef.current}
                     variant="outlined"
                   />
                 </Grid>
@@ -595,8 +612,8 @@ export const ContractInteraction = (props) => {
                     label="Eliminated Token Count"
                     name="eliminatedTokenCount"
                     type="number"
-                    onChange={handleInputChangePoly}
-                    value={valuesPoly.eliminatedTokenCount}
+                    onChange={handleEliminatedTokenCountChange}
+                    value={eliminatedTokenCountRef.current}
                     variant="outlined"
                   />
                 </Grid>
@@ -1057,8 +1074,8 @@ export const ContractInteraction = (props) => {
                 label="Interval Time"
                 name="intervalTime"
                 type="number"
-                onChange={handleInputChangePoly}
-                value={valuesPoly.intervalTime}
+                onChange={handleIntervalTimeChange}
+                value={intervalTimeRef.current}
                 variant="outlined"
               />
             </CardContent>
@@ -1087,8 +1104,8 @@ export const ContractInteraction = (props) => {
                 label="Eliminated Token Count"
                 name="eliminatedTokenCount"
                 type="number"
-                onChange={handleInputChangePoly}
-                value={valuesPoly.eliminatedTokenCount}
+                onChange={handleEliminatedTokenCountChange}
+                value={eliminatedTokenCountRef.current}
                 variant="outlined"
               />
             </CardContent>
