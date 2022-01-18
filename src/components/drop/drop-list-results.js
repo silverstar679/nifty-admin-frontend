@@ -147,7 +147,7 @@ export const DropListResults = () => {
                     <TableCell>
                       {drop.isDropEnded
                         ? 'Done'
-                        : drop.dropDate <= new Date.now()
+                        : drop.dropDate <= Date.now()
                         ? 'Started'
                         : 'New'}
                     </TableCell>
