@@ -37,7 +37,7 @@ const NETWORKS = {
 
 const TYPES = {
   old: 'Old Version',
-  replace: 'BattleRoayle',
+  replace: 'BattleRoyale',
   mint: 'BattleRoyaleMintingNew',
   random: 'BattleRoyaleRandomPart',
 }

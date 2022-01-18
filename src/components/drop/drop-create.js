@@ -23,7 +23,6 @@ import { useEthereumWeb3React } from '../../hooks'
 import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
 
-
 const networks = [
   {
     value: 'mainnet',
@@ -42,7 +41,7 @@ const types = [
   },
   {
     value: 'replace',
-    label: 'BattleRoayle',
+    label: 'BattleRoyale',
   },
   {
     value: 'mint',
@@ -112,7 +111,7 @@ export const DropCreate = (props) => {
         queueId: nextQueueId,
       })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drops, values.polygonContractAddress])
 
   const handleInputChange = (event) => {

@@ -670,7 +670,7 @@ export const ContractInteraction = (props) => {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-around',
+                justifyContent: 'space-between',
               }}
             >
               <Box

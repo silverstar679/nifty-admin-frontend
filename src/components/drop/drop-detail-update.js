@@ -39,7 +39,7 @@ const types = [
   },
   {
     value: 'replace',
-    label: 'BattleRoayle',
+    label: 'BattleRoyale',
   },
   {
     value: 'mint',

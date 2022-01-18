@@ -28,7 +28,7 @@ export const DropListToolbar = (props) => (
       <Box sx={{ m: 1 }}>
         <NextLink href="/drops/create">
           <Button color="primary" variant="contained">
-            Add Drops
+            Add Drop
           </Button>
         </NextLink>
       </Box>
