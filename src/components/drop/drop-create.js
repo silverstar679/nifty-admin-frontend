@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Button,
@@ -20,6 +20,9 @@ import { createDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useEthereumWeb3React } from '../../hooks'
+import { getAllDrops } from '../../services/apis'
+import _ from 'lodash'
+
 
 const networks = [
   {
@@ -35,19 +38,19 @@ const networks = [
 const types = [
   {
     value: 'old',
-    label: 'Old',
+    label: 'Old Version',
   },
   {
     value: 'replace',
-    label: 'Replace',
+    label: 'BattleRoayle',
   },
   {
     value: 'mint',
-    label: 'Minting New',
+    label: 'BattleRoyaleMintingNew',
   },
   {
     value: 'random',
-    label: 'Random',
+    label: 'BattleRoyaleRandomPart',
   },
 ]
 
@@ -80,6 +83,37 @@ export const DropCreate = (props) => {
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
+
+  const [drops, setDrops] = useState([])
+
+  useEffect(() => {
+    async function getDrops() {
+      const drops = await getAllDrops()
+      setDrops(drops)
+    }
+    getDrops()
+  }, [])
+
+  useEffect(() => {
+    if (drops.length !== 0 && values.polygonContractAddress !== '') {
+      const nextQueueId =
+        parseInt(
+          _.last(
+            _.sortBy(
+              _.filter(drops, {
+                polygonContractAddress: values.polygonContractAddress,
+              }),
+              ['queueId']
+            )
+          ).queueId
+        ) + 1
+      setValues({
+        ...values,
+        queueId: nextQueueId,
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drops, values.polygonContractAddress])
 
   const handleInputChange = (event) => {
     setValues({

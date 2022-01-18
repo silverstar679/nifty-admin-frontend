@@ -35,19 +35,19 @@ const networks = [
 const types = [
   {
     value: 'old',
-    label: 'Old',
+    label: 'Old Version',
   },
   {
     value: 'replace',
-    label: 'Replace',
+    label: 'BattleRoayle',
   },
   {
     value: 'mint',
-    label: 'Minting New',
+    label: 'BattleRoyaleMintingNew',
   },
   {
     value: 'random',
-    label: 'Random',
+    label: 'BattleRoyaleRandomPart',
   },
 ]
 

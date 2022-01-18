@@ -4,7 +4,6 @@ import { format } from 'date-fns'
 import {
   Box,
   Card,
-  Checkbox,
   Table,
   TableBody,
   TableCell,
@@ -31,10 +30,21 @@ import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
 import { useEthereumWeb3React } from '../../hooks'
 
+const NETWORKS = {
+  mainnet: 'Mainnet',
+  rinkeby: 'Rinkeby',
+}
+
+const TYPES = {
+  old: 'Old Version',
+  replace: 'BattleRoayle',
+  mint: 'BattleRoyaleMintingNew',
+  random: 'BattleRoyaleRandomPart',
+}
+
 export const DropListResults = () => {
   const { active, account, chainId } = useEthereumWeb3React()
 
-  const [selectedDropIds, setSelectedDropIds] = useState([])
   const [limit, setLimit] = useState(10)
   const [page, setPage] = useState(0)
   const [openDialog, setOpenDialog] = useState(false)
@@ -48,7 +58,8 @@ export const DropListResults = () => {
   useEffect(() => {
     async function getDrops() {
       const drops = await getAllDrops()
-      setDrops(drops)
+      const sortedDrops = _.reverse(_.sortBy(drops, ['created_at']))
+      setDrops(sortedDrops)
     }
     getDrops()
   }, [])
@@ -87,40 +98,9 @@ export const DropListResults = () => {
     }
   }
 
-  const handleSelectAll = (event) => {
-    let newSelectedDropIds
-
-    if (event.target.checked) {
-      newSelectedDropIds = drops.map((drop) => drop._id)
-    } else {
-      newSelectedDropIds = []
-    }
-
-    setSelectedDropIds(newSelectedDropIds)
-  }
-
-  const handleSelectOne = (event, id) => {
-    const selectedIndex = selectedDropIds.indexOf(id)
-    let newSelectedDropIds = []
-
-    if (selectedIndex === -1) {
-      newSelectedDropIds = newSelectedDropIds.concat(selectedDropIds, id)
-    } else if (selectedIndex === 0) {
-      newSelectedDropIds = newSelectedDropIds.concat(selectedDropIds.slice(1))
-    } else if (selectedIndex === selectedDropIds.length - 1) {
-      newSelectedDropIds = newSelectedDropIds.concat(selectedDropIds.slice(0, -1))
-    } else if (selectedIndex > 0) {
-      newSelectedDropIds = newSelectedDropIds.concat(
-        selectedDropIds.slice(0, selectedIndex),
-        selectedDropIds.slice(selectedIndex + 1)
-      )
-    }
-
-    setSelectedDropIds(newSelectedDropIds)
-  }
-
   const handleLimitChange = (event) => {
-    setLimit(event.target.value)
+    setLimit(parseInt(event.target.value, 10))
+    setPage(0)
   }
 
   const handlePageChange = (event, newPage) => {
@@ -137,16 +117,7 @@ export const DropListResults = () => {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={selectedDropIds.length === drops.length}
-                      color="primary"
-                      indeterminate={
-                        selectedDropIds.length > 0 && selectedDropIds.length < drops.length
-                      }
-                      onChange={handleSelectAll}
-                    />
-                  </TableCell>
+                  <TableCell>No</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>ETH Address</TableCell>
                   <TableCell>Polygon Address</TableCell>
@@ -154,25 +125,15 @@ export const DropListResults = () => {
                   <TableCell>Network</TableCell>
                   <TableCell>Type</TableCell>
                   <TableCell>Drop Status</TableCell>
-                  <TableCell>Drop Date</TableCell>
                   <TableCell>Battle Status</TableCell>
+                  <TableCell>Drop Date</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {drops.slice(0, limit).map((drop) => (
-                  <TableRow
-                    hover
-                    key={drop._id}
-                    selected={selectedDropIds.indexOf(drop._id) !== -1}
-                  >
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={selectedDropIds.indexOf(drop._id) !== -1}
-                        onChange={(event) => handleSelectOne(event, drop._id)}
-                        value="true"
-                      />
-                    </TableCell>
+                {drops.slice(0, limit).map((drop, index) => (
+                  <TableRow hover key={drop._id}>
+                    <TableCell>{index + 1}</TableCell>
                     <TableCell>
                       <Typography color="textPrimary" variant="body1">
                         {drop.name}
@@ -181,11 +142,19 @@ export const DropListResults = () => {
                     <TableCell>{displayAddress(drop.address)}</TableCell>
                     <TableCell>{displayAddress(drop.polygonContractAddress)}</TableCell>
                     <TableCell>{drop.queueId}</TableCell>
-                    <TableCell>{drop.network}</TableCell>
-                    <TableCell>{drop.type}</TableCell>
-                    <TableCell>{drop.isDropEnded ? 'Done' : 'Pending'}</TableCell>
+                    <TableCell>{NETWORKS[drop.network]}</TableCell>
+                    <TableCell>{TYPES[drop.type]}</TableCell>
+                    <TableCell>
+                      {drop.isDropEnded
+                        ? 'Done'
+                        : drop.dropDate <= new Date.now()
+                        ? 'Started'
+                        : 'New'}
+                    </TableCell>
+                    <TableCell>
+                      {drop.isBattleEnded ? 'Done' : drop.isDropEnded ? 'Started' : 'New'}
+                    </TableCell>
                     <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
-                    <TableCell>{drop.isBattleEnded ? 'Done' : 'Pending'}</TableCell>
                     <TableCell>
                       <Box
                         sx={{
