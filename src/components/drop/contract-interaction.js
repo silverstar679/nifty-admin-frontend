@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef } from 'react'
-import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  Grid,
+  TextField,
+  Link,
+} from '@mui/material'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useEthereumWeb3React } from '../../hooks'
@@ -16,8 +26,13 @@ import { MESSAGE, SEVERITY } from '../../constants/toast'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
+import { displayAddress } from '../../utils/displayAddress'
 
 export const ContractInteraction = (props) => {
+  const ethNetwork =
+    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? '' : 'rinkeby.'
+  const polyNetwork =
+    process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? '' : 'mumbai.'
   const battleAddress = props.drop.address
   const polygonContractAddress = props.drop.polygonContractAddress
   const queueId = props.drop.queueId
@@ -60,6 +75,25 @@ export const ContractInteraction = (props) => {
     erc20AmountPolyNet: 0,
     erc20TokenAddressPolyNet: '',
   })
+  const [txHashes, setTxHashes] = useState({
+    startBattleEth: '',
+    price: '',
+    dropTime: '',
+    baseURI: '',
+    defaultTokenURI: '',
+    prizeTokenURI: '',
+    maxSupply: '',
+    prizeTokenURI: '',
+    maxSupply: '',
+    unitsPerTransaction: '',
+    withdrawEthEthNet: '',
+    withdrawErc20EthNet: '',
+    withdrawEthPolyNet: '',
+    withdrawErc20PolyNet: '',
+    intervalTime: '',
+    eliminatedTokenCount: '',
+  })
+  const [startBattlePolyTx, setStartBattlePolyTx] = useState('')
 
   const [intervalTime, _setIntervalTime] = useState(0)
   const [eliminatedTokenCount, _setEliminatedTokenCount] = useState(0)
@@ -232,18 +266,16 @@ export const ContractInteraction = (props) => {
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
           ;(async () => {
-            const txPoly = await polygonContractWithSigner.addToBattleQueue(
+            const tx = await polygonContractWithSigner.addToBattleQueue(
               battleAddressEmitted,
               intervalTimeRef.current,
               inPlayEmitted,
               eliminatedTokenCountRef.current
             )
-            console.log(txPoly.hash)
-            await txPoly.wait()
+            setStartBattlePolyTx(tx.hash)
+            await tx.wait()
 
-            setIsToast(false)
-            setIsToast(true)
-            setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+            toastCompleted()
           })().then((e) => {})
           setInPlay(inPlayEmitted)
           setBattleState(1)
@@ -269,310 +301,315 @@ export const ContractInteraction = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract])
 
+  const toastInProgress = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+  }
+
+  const toastCompleted = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+  }
+
+  const toastNotOwner = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+  }
+
+  const connectedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.CONNECTED })
+  }
+
+  const notConnectedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.NOT_CONNECTED_WALLET })
+  }
+
+  useEffect(() => {
+    if (active) {
+      connectedToast()
+    } else {
+      notConnectedToast()
+    }
+  }, [active])
+
   const startBattle = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.startBattle()
-      console.log('Ethereum', tx.hash)
+      setTxHashes({
+        ...txHashes,
+        startBattleEth: tx.hash,
+      })
       await tx.wait()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const withdrawEthEthNet = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountEthNet)
+      setTxHashes({
+        ...txHashes,
+        withdrawEthEthNet: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const withdrawERC20EthNet = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.withdrawERC20Token(
         values.erc20TokenAddressEthNet,
         values.erc20AmountEthNet
       )
+      setTxHashes({
+        ...txHashes,
+        withdrawErc20EthNet: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const withdrawEthPolyNet = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountPolyNet)
+      setTxHashes({
+        ...txHashes,
+        withdrawEthPolyNet: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const withdrawERC20PolyNet = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.withdrawERC20Token(
         values.erc20TokenAddressPolyNet,
         values.erc20AmountPolyNet
       )
+      setTxHashes({
+        ...txHashes,
+        withdrawErc20PolyNet: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateNFTPrice = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.setPrice(ethers.utils.parseEther(values.price))
+      setTxHashes({
+        ...txHashes,
+        price: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateBaseURI = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.setBaseURI(values.baseURI)
+      setTxHashes({
+        ...txHashes,
+        baseURI: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateDefaultTokenURI = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.setDefaultTokenURI(values.defaultTokenURI)
+      setTxHashes({
+        ...txHashes,
+        defaultTokenURI: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updatePrizeTokenURI = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.setPrizeTokenURI(values.prizeTokenURI)
+      setTxHashes({
+        ...txHashes,
+        prizeTokenURI: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateMaxSupply = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.setMaxSupply(values.maxSupply)
+      setTxHashes({
+        ...txHashes,
+        maxSupply: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateUnitsPerTransaction = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.setUnitsPerTransaction(values.unitsPerTransaction)
+      setTxHashes({
+        ...txHashes,
+        unitsPerTransaction: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateDropTime = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.setStartingTime(
         Date.parse(new Date(dropDate)) / 1000
       )
+      setTxHashes({
+        ...txHashes,
+        dropTime: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateIntervalTime = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await polygonContractWithSigner.setBattleIntervalTime(
         queueId,
         intervalTimeRef.current
       )
+      setTxHashes({
+        ...txHashes,
+        intervalTime: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateEliminatedTokenCount = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await polygonContractWithSigner.setEliminatedTokenCount(
         queueId,
         eliminatedTokenCountRef.current
       )
+      setTxHashes({
+        ...txHashes,
+        eliminatedTokenCount: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const addDefaultToken = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.addTokenURI(
         values.defaultTokenURIRandom,
         values.defaultTokenCountRandom
       )
+      setTxHashes({
+        ...txHashes,
+        addDefaultTokenURI: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const removeDefaultToken = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.removeTokenURI(values.removableTokenIndex)
+      setTxHashes({
+        ...txHashes,
+        removeDefaultTokenURI: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
   const updateDefaultTokenCount = async () => {
     if (account === owner) {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
+      toastInProgress()
       const tx = await ethereumContractWithSigner.addTokenURI(
         values.defaultTokenURIRandomUpdate,
         values.defaultTokenCountRandomUpdate
       )
+      setTxHashes({
+        ...txHashes,
+        updateDefaultTokenCount: tx.hash,
+      })
       await tx.wait()
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+      toastCompleted()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+      toastNotOwner()
     }
   }
 
@@ -632,13 +669,47 @@ export const ContractInteraction = (props) => {
             <Box
               sx={{
                 display: 'flex',
-                justifyContent: 'flex-start',
-                p: 2,
+                alignItems: 'center',
+                justifyContent: 'space-around',
               }}
             >
-              <Button color="primary" variant="contained" onClick={startBattle}>
-                Start
-              </Button>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-start',
+                  p: 2,
+                }}
+              >
+                <Button color="primary" variant="contained" onClick={startBattle}>
+                  Start
+                </Button>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                  p: 2,
+                }}
+              >
+                {txHashes.startBattleEth && (
+                  <Link
+                    href={`https://${ethNetwork}etherscan.io/tx/${txHashes.startBattleEth}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Ethereum: {displayAddress(txHashes.startBattleEth)}
+                  </Link>
+                )}
+                {startBattlePolyTx && (
+                  <Link
+                    href={`https://${polyNetwork}polygonscan.com/tx/${startBattlePolyTx}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Polygon: {displayAddress(startBattlePolyTx)}
+                  </Link>
+                )}
+              </Box>
             </Box>
           </Card>
         </Grid>
