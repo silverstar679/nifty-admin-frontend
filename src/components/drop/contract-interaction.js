@@ -13,6 +13,9 @@ import { ethers } from 'ethers'
 import _ from 'lodash'
 import { TransactionInfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
+import AdapterDateFns from '@mui/lab/AdapterDateFns'
+import LocalizationProvider from '@mui/lab/LocalizationProvider'
+import DateTimePicker from '@mui/lab/DateTimePicker'
 
 export const ContractInteraction = (props) => {
   const battleAddress = props.drop.address
@@ -34,9 +37,10 @@ export const ContractInteraction = (props) => {
   const [isBattleEnded, setIsBattleEnded] = useState(false)
   const [defaultTokenInfo, setDefaultTokenInfo] = useState([])
 
+  const [dropDate, setDropDate] = useState(new Date(Date.now()))
+
   const [values, setValues] = useState({
     price: 0,
-    startingTime: Date.now(),
     baseURI: '',
     defaultTokenURI: '',
     defaultTokenURIRandom: '',
@@ -86,6 +90,10 @@ export const ContractInteraction = (props) => {
   }
   const handleEliminatedTokenCountChange = (event) => {
     setEliminatedTokenCount(event.target.value)
+  }
+
+  const handleDropDateChange = (newDate) => {
+    setDropDate(newDate)
   }
 
   useEffect(() => {
@@ -186,12 +194,12 @@ export const ContractInteraction = (props) => {
                   setValues({
                     ...values,
                     price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
-                    startingTime: BigNumber.from(startingTime).toNumber(),
                     baseURI,
                     prizeTokenURI,
                     maxSupply: BigNumber.from(maxSupply).toNumber(),
                     unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
                   })
+                  setDropDate(new Date(BigNumber.from(startingTime).toNumber()))
                 })
               }
             )
@@ -200,13 +208,13 @@ export const ContractInteraction = (props) => {
               setValues({
                 ...values,
                 price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
-                startingTime: BigNumber.from(startingTime).toNumber(),
                 baseURI,
                 defaultTokenURI,
                 prizeTokenURI,
                 maxSupply: BigNumber.from(maxSupply).toNumber(),
                 unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
               })
+              setDropDate(new Date(BigNumber.from(startingTime).toNumber()))
             })
           }
         }
@@ -457,7 +465,9 @@ export const ContractInteraction = (props) => {
       setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
-      const tx = await ethereumContractWithSigner.setStartingTime(values.startingTime)
+      const tx = await ethereumContractWithSigner.setStartingTime(
+        Date.parse(new Date(dropDate)) / 1000
+      )
       await tx.wait()
       setIsToast(false)
       setIsToast(true)
@@ -673,14 +683,14 @@ export const ContractInteraction = (props) => {
             <CardHeader title="Set Drop Time" sx={{ py: 1 }} />
             <Divider />
             <CardContent>
-              <TextField
-                fullWidth
-                label="Drop Time"
-                name="startingTime"
-                onChange={handleInputChange}
-                value={values.startingTime}
-                variant="outlined"
-              />
+              <LocalizationProvider dateAdapter={AdapterDateFns}>
+                <DateTimePicker
+                  label="Drop Date"
+                  value={dropDate}
+                  onChange={handleDropDateChange}
+                  renderInput={(params) => <TextField {...params} />}
+                />
+              </LocalizationProvider>
             </CardContent>
             <Divider />
             <Box
