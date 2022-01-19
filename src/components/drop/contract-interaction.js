@@ -612,7 +612,7 @@ export const ContractInteraction = (props) => {
       toastNotOwner()
     }
   }
-  console.log(dropDate)
+
   return (
     <>
       <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
