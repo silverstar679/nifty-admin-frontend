@@ -233,7 +233,9 @@ export const ContractInteraction = (props) => {
                     maxSupply: BigNumber.from(maxSupply).toNumber(),
                     unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
                   })
-                  setDropDate(new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString())
+                  setDropDate(
+                    new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString()
+                  )
                 })
               }
             )
