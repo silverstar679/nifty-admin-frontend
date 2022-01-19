@@ -77,7 +77,7 @@ export const DashboardSidebar = (props) => {
                   Nifty Royale Admin
                 </Typography>
                 <Typography color="neutral.400" variant="body2">
-                  {process.env.NEXT_PUBLIC_NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1'
+                  {process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1'
                     ? 'Mainnet Version'
                     : 'Rinkeby Version'}
                 </Typography>

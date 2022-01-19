@@ -696,6 +696,7 @@ export const ContractInteraction = (props) => {
                     href={`https://${ethNetwork}etherscan.io/tx/${txHashes.startBattleEth}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    sx={{ mr: 5 }}
                   >
                     Ethereum: {displayAddress(txHashes.startBattleEth)}
                   </Link>

@@ -37,9 +37,9 @@ const NETWORKS = {
 
 const TYPES = {
   old: 'Old Version',
-  replace: 'BattleRoyale',
-  mint: 'BattleRoyaleMintingNew',
-  random: 'BattleRoyaleRandomPart',
+  replace: 'Battle Royale',
+  mint: 'Battle Royale Minting New',
+  random: 'Battle Royale Random Part',
 }
 
 export const DropListResults = () => {
@@ -140,16 +140,14 @@ export const DropListResults = () => {
                       </Typography>
                     </TableCell>
                     <TableCell>{displayAddress(drop.address)}</TableCell>
-                    <TableCell>{displayAddress(drop.polygonContractAddress)}</TableCell>
+                    <TableCell>
+                      {drop.polygonContractAddress && displayAddress(drop.polygonContractAddress)}
+                    </TableCell>
                     <TableCell>{drop.queueId}</TableCell>
                     <TableCell>{NETWORKS[drop.network]}</TableCell>
                     <TableCell>{TYPES[drop.type]}</TableCell>
                     <TableCell>
-                      {drop.isDropEnded
-                        ? 'Done'
-                        : drop.dropDate <= Date.now()
-                        ? 'Started'
-                        : 'New'}
+                      {drop.isDropEnded ? 'Done' : drop.dropDate <= Date.now() ? 'Started' : 'New'}
                     </TableCell>
                     <TableCell>
                       {drop.isBattleEnded ? 'Done' : drop.isDropEnded ? 'Started' : 'New'}
