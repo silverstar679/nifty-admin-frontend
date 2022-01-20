@@ -12,6 +12,8 @@ import {
   FormControlLabel,
   Checkbox,
   MenuItem,
+  Switch,
+  Typography,
 } from '@mui/material'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
@@ -62,13 +64,14 @@ export const DropDetailUpdate = (props) => {
     defaultMetadata: props.drop.defaultMetadata,
     defaultNFTUri: props.drop.defaultNFTUri,
     description: props.drop.description,
-    extra: JSON.stringify(props.drop.extra),
     name: props.drop.name,
     network: props.drop.network,
     polygonContractAddress: props.drop.polygonContractAddress,
     prizeMetadata: props.drop.prizeMetadata,
     queueId: props.drop.queueId,
     type: props.drop.type,
+    threshold: '',
+    previewMedia: JSON.stringify(props.drop.previewMedia),
   })
 
   const [checkboxValues, setCheckboxValues] = useState({
@@ -78,6 +81,7 @@ export const DropDetailUpdate = (props) => {
   })
 
   const [dropDate, setDropDate] = useState(props.drop.dropDate)
+  const [battleDate, setBattleDate] = useState(props.drop.battleDate)
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
@@ -100,6 +104,10 @@ export const DropDetailUpdate = (props) => {
     setDropDate(newDate)
   }
 
+  const handleBattleDateChange = (newDate) => {
+    setBattleDate(newDate)
+  }
+
   const handleClose = () => {
     setIsToast(false)
   }
@@ -120,6 +128,9 @@ export const DropDetailUpdate = (props) => {
         prizeMetadata: values.prizeMetadata,
         defaultNFTUri: values.defaultNFTUri,
         extra: JSON.parse(values.extra),
+        previewMedia: JSON.parse(values.previewMedia),
+        threshold: values.threshold,
+
         created_at: values.created_at,
 
         isDropEnded: checkboxValues.isDropEnded,
@@ -127,6 +138,7 @@ export const DropDetailUpdate = (props) => {
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
 
         dropDate,
+        battleDate,
       }
       setIsToast(false)
       const updatedDrop = await updateDrop(props.drop._id, data)
@@ -151,7 +163,7 @@ export const DropDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Name"
+                  label="Drop Name"
                   name="name"
                   onChange={handleInputChange}
                   value={values.name}
@@ -161,17 +173,7 @@ export const DropDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Address"
-                  name="address"
-                  onChange={handleInputChange}
-                  value={values.address}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Artist"
+                  label="Artist Name"
                   name="artist"
                   onChange={handleInputChange}
                   value={values.artist}
@@ -181,13 +183,24 @@ export const DropDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Creator"
+                  label="Creator Name"
                   name="creator"
                   onChange={handleInputChange}
                   value={values.creator}
                   variant="outlined"
                 />
               </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Ethereum Contract Address"
+                  name="address"
+                  onChange={handleInputChange}
+                  value={values.address}
+                  variant="outlined"
+                />
+              </Grid>
+
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
@@ -201,7 +214,7 @@ export const DropDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Queue ID"
+                  label="Queue ID for polygon contract"
                   name="queueId"
                   onChange={handleInputChange}
                   value={values.queueId}
@@ -211,7 +224,7 @@ export const DropDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Select Network"
+                  label="Select Ethereum Network"
                   name="network"
                   onChange={handleInputChange}
                   select
@@ -228,7 +241,7 @@ export const DropDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Select Type"
+                  label="Select Battle Type"
                   name="type"
                   onChange={handleInputChange}
                   select
@@ -253,6 +266,27 @@ export const DropDetailUpdate = (props) => {
                 </LocalizationProvider>
               </Grid>
               <Grid item md={6} xs={12}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DateTimePicker
+                    label="Battle Date"
+                    value={battleDate}
+                    onChange={handleBattleDateChange}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+              </Grid>
+
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Minimum NFT counts to start battle"
+                  name="threshold"
+                  onChange={handleInputChange}
+                  value={values.threshold}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
                 <FormGroup>
                   <FormControlLabel
                     control={
@@ -263,7 +297,7 @@ export const DropDetailUpdate = (props) => {
                         inputProps={{ 'aria-label': 'controlled' }}
                       />
                     }
-                    label="Is Drop Ended?"
+                    label="Drop Ended?"
                   />
                 </FormGroup>
               </Grid>
@@ -278,26 +312,10 @@ export const DropDetailUpdate = (props) => {
                         inputProps={{ 'aria-label': 'controlled' }}
                       />
                     }
-                    label="Is Battle Ended?"
+                    label="Battle Ended?"
                   />
                 </FormGroup>
               </Grid>
-              <Grid item md={6} xs={12}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="isDefaultNFTImage"
-                        checked={checkboxValues.isDefaultNFTImage}
-                        onChange={handleCheckboxChange}
-                        inputProps={{ 'aria-label': 'controlled' }}
-                      />
-                    }
-                    label="Is Default NFT Image?"
-                  />
-                </FormGroup>
-              </Grid>
-
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -321,12 +339,29 @@ export const DropDetailUpdate = (props) => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Default NFT URI"
+                  label="Default NFT Media URI for home, drop list and battle list page"
                   name="defaultNFTUri"
                   onChange={handleInputChange}
                   value={values.defaultNFTUri}
                   variant="outlined"
                 />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Typography>Video</Typography>
+                  <Switch
+                    name="isDefaultNFTImage"
+                    checked={checkboxValues.isDefaultNFTImage}
+                    onChange={handleCheckboxChange}
+                    inputProps={{ 'aria-label': 'controlled' }}
+                  />
+                  <Typography>Image</Typography>
+                </Box>
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -344,11 +379,11 @@ export const DropDetailUpdate = (props) => {
                 <TextField
                   fullWidth
                   multiline
-                  label="Extra"
-                  name="extra"
+                  label="Preview media for random version"
+                  name="previewMedia"
                   rows={5}
                   onChange={handleInputChange}
-                  value={values.extra}
+                  value={values.previewMedia}
                   variant="outlined"
                 />
               </Grid>
