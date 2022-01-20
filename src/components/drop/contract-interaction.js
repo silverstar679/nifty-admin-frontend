@@ -55,6 +55,7 @@ export const ContractInteraction = (props) => {
   const [dropDate, setDropDate] = useState(new Date(Date.now()))
 
   const [values, setValues] = useState({
+    winnerTokenId: 0,
     price: 0,
     baseURI: '',
     defaultTokenURI: '',
@@ -76,6 +77,7 @@ export const ContractInteraction = (props) => {
     erc20TokenAddressPolyNet: '',
   })
   const [txHashes, setTxHashes] = useState({
+    winnerTokenId: '',
     startBattleEth: '',
     price: '',
     dropTime: '',
@@ -294,8 +296,10 @@ export const ContractInteraction = (props) => {
 
       polygonContract.on('BattleEnded', (finished, gameAddr, winnerTokenId, battleState, event) => {
         if (battleAddress === gameAddr) {
-          ethereumContractWithSigner.endBattle(winnerTokenId).then(() => {
-            setIsBattleEnded(true)
+          setIsBattleEnded(true)
+          setValues({
+            ...values,
+            winnerTokenId,
           })
         }
       })
@@ -428,6 +432,21 @@ export const ContractInteraction = (props) => {
       setTxHashes({
         ...txHashes,
         price: tx.hash,
+      })
+      await tx.wait()
+      toastCompleted()
+    } else {
+      toastNotOwner()
+    }
+  }
+
+  const endBattle = async () => {
+    if (account === owner) {
+      toastInProgress()
+      const tx = await ethereumContractWithSigner.endBattle(values.winnerTokenId)
+      setTxHashes({
+        ...txHashes,
+        winnerTokenId: tx.hash,
       })
       await tx.wait()
       toastCompleted()
@@ -720,6 +739,35 @@ export const ContractInteraction = (props) => {
         <Grid item md={6}>
           <Card>
             <CardHeader title="Ethereum Contract Functionalities" />
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="End Battle" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Winner Token ID"
+                name="winnerTokenId"
+                onChange={handleInputChange}
+                value={values.winnerTokenId}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={endBattle}>
+                End
+              </Button>
+            </Box>
           </Card>
 
           <Box sx={{ py: 1 }} />
