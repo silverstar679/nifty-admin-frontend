@@ -31,13 +31,14 @@ export function useEthereumNetworkContract(address, ABI, withSignerIfPossible = 
 
   return useMemo(() => {
     try {
-      if (ABI.length === 0) return null
-      return getContract(
-        address,
-        ABI,
-        library,
-        withSignerIfPossible && account ? account : undefined
-      )
+      if (address.length !== 42 || ABI.length === 0) return null
+      else
+        return getContract(
+          address,
+          ABI,
+          library,
+          withSignerIfPossible && account ? account : undefined
+        )
     } catch (error) {
       console.error('Failed to get contract', error)
       return null
@@ -50,7 +51,7 @@ export function usePolygonNetworkContract(address, ABI, withSignerIfPossible = t
 
   return useMemo(() => {
     try {
-      if (!address || ABI.length === 0) return null
+      if (!address || address.length !== 42 || ABI.length === 0) return null
       return getContract(
         address,
         ABI,

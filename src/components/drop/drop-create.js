@@ -24,6 +24,15 @@ import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useEthereumWeb3React } from '../../hooks'
 import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
+import fetchEthereumABI from '../../services/fetchEthereumABI'
+import fetchPolygonABI from '../../services/fetchPolygonABI'
+import {
+  useEthereumNetworkContract,
+  useEthereumContract,
+  usePolygonNetworkContract,
+} from '../../hooks/useContract'
+import { BigNumber } from '@ethersproject/bignumber'
+import { ethers } from 'ethers'
 
 const networks = [
   {
@@ -53,20 +62,20 @@ const types = [
 
 export const DropCreate = (props) => {
   const { active, account, chainId } = useEthereumWeb3React()
-
+  const ethNetwork =
+    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
-    address: '',
+    name: '',
     artist: '',
-    creator: 'Nifty Royale',
+    creator: '',
+    address: '',
     defaultMetadata: '',
+    prizeMetadata: '',
     defaultNFTUri: '',
     description: '',
-    name: '',
-    network: 'mainnet',
     polygonContractAddress: '',
-    prizeMetadata: '',
     queueId: '',
-    type: 'random',
+    type: 'replace',
     threshold: '',
     previewMedia: '',
   })
@@ -84,6 +93,9 @@ export const DropCreate = (props) => {
   const [toastInfo, setToastInfo] = useState({})
 
   const [drops, setDrops] = useState([])
+
+  const [ethereumAbi, setEthereumAbi] = useState([])
+  const [polygonAbi, setPolygonAbi] = useState([])
 
   useEffect(() => {
     async function getDrops() {
@@ -114,6 +126,59 @@ export const DropCreate = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [drops, values.polygonContractAddress])
 
+  useEffect(() => {
+    async function getABI() {
+      const abi = await fetchEthereumABI(values.address)
+      setEthereumAbi(abi)
+    }
+    if (values.address) {
+      getABI()
+    }
+  }, [values.address])
+
+  useEffect(() => {
+    async function getABI() {
+      const abi = await fetchPolygonABI(values.polygonContractAddress)
+      setPolygonAbi(abi)
+    }
+    if (values.polygonContractAddress) {
+      getABI()
+    }
+  }, [values.polygonContractAddress])
+
+  const ethereumContract = useEthereumNetworkContract(values.address, ethereumAbi, true)
+  const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
+
+  useEffect(() => {
+    async function getDropInfo() {
+      Promise.all([ethereumContract.name(), ethereumContract.baseURI()]).then(([name, baseURI]) => {
+        setValues({
+          ...values,
+          name: name.split(':')[1],
+          artist: name.split(':')[0].split('X')[1],
+          creator: name.split(':')[0].split('X')[0],
+        })
+      })
+    }
+    if (ethereumContract && ethereumContract.provider && ethereumAbi.length !== 0) {
+      getDropInfo()
+    }
+  }, [ethereumContract, ethereumAbi])
+
+  useEffect(() => {
+    async function getQueueId() {
+      Promise.all([polygonContract.battleQueueLength()]).then(([queueId]) => {
+        setValues({
+          ...values,
+          queueId: BigNumber.from(queueId).toNumber(),
+        })
+      })
+    }
+    if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
+      getQueueId()
+    }
+  }, [polygonContract, polygonAbi])
+
   const handleInputChange = (event) => {
     setValues({
       ...values,
@@ -140,6 +205,12 @@ export const DropCreate = (props) => {
     setIsToast(false)
   }
 
+  const toastInProgress = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.DROP_CREATE_PROGRESS })
+  }
+
   const handleCreateDrop = async () => {
     if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
       const data = {
@@ -148,14 +219,14 @@ export const DropCreate = (props) => {
         artist: values.artist,
         creator: values.creator,
         type: values.type,
-        network: values.network,
+        network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
         description: values.description,
         defaultMetadata: values.defaultMetadata,
         prizeMetadata: values.prizeMetadata,
         defaultNFTUri: values.defaultNFTUri,
-        previewMedia: JSON.parse(values.previewMedia),
+        previewMedia: JSON.parse(values.previewMedia ? values.previewMedia : '{}'),
         threshold: values.threshold,
         created_at: values.created_at,
 
@@ -166,8 +237,9 @@ export const DropCreate = (props) => {
         dropDate,
         battleDate,
       }
-      setIsToast(false)
+      toastInProgress()
       const createdDrop = await createDrop(data)
+      setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_CREATED })
     } else {
@@ -187,36 +259,6 @@ export const DropCreate = (props) => {
           <Divider />
           <CardContent>
             <Grid container spacing={3}>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Drop Name"
-                  name="name"
-                  onChange={handleInputChange}
-                  value={values.name}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Artist Name"
-                  name="artist"
-                  onChange={handleInputChange}
-                  value={values.artist}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Creator Name"
-                  name="creator"
-                  onChange={handleInputChange}
-                  value={values.creator}
-                  variant="outlined"
-                />
-              </Grid>
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
@@ -240,33 +282,6 @@ export const DropCreate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Queue ID for polygon contract"
-                  name="queueId"
-                  onChange={handleInputChange}
-                  value={values.queueId}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Select Ethereum Network"
-                  name="network"
-                  onChange={handleInputChange}
-                  select
-                  value={values.network}
-                  variant="outlined"
-                >
-                  {networks.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
                   label="Select Battle Type"
                   name="type"
                   onChange={handleInputChange}
@@ -280,6 +295,16 @@ export const DropCreate = (props) => {
                     </MenuItem>
                   ))}
                 </TextField>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Minimum NFT counts to start battle"
+                  name="threshold"
+                  onChange={handleInputChange}
+                  value={values.threshold}
+                  variant="outlined"
+                />
               </Grid>
               <Grid item md={6} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -302,78 +327,6 @@ export const DropCreate = (props) => {
                 </LocalizationProvider>
               </Grid>
               <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Minimum NFT counts to start battle"
-                  name="threshold"
-                  onChange={handleInputChange}
-                  value={values.threshold}
-                  variant="outlined"
-                />
-              </Grid>
-
-              <Grid item md={6} xs={12}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="isDropEnded"
-                        checked={checkboxValues.isDropEnded}
-                        onChange={handleCheckboxChange}
-                        inputProps={{ 'aria-label': 'controlled' }}
-                      />
-                    }
-                    label="Drop Ended?"
-                  />
-                </FormGroup>
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="isBattleEnded"
-                        checked={checkboxValues.isBattleEnded}
-                        onChange={handleCheckboxChange}
-                        inputProps={{ 'aria-label': 'controlled' }}
-                      />
-                    }
-                    label="Battle Ended?"
-                  />
-                </FormGroup>
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Default Metadata URI"
-                  name="defaultMetadata"
-                  onChange={handleInputChange}
-                  value={values.defaultMetadata}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Prize Metadata URI"
-                  name="prizeMetadata"
-                  onChange={handleInputChange}
-                  value={values.prizeMetadata}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Default NFT Media URI for home, drop list and battle list page"
-                  name="defaultNFTUri"
-                  onChange={handleInputChange}
-                  value={values.defaultNFTUri}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -387,8 +340,18 @@ export const DropCreate = (props) => {
                     onChange={handleCheckboxChange}
                     inputProps={{ 'aria-label': 'controlled' }}
                   />
-                  <Typography>Image</Typography>
+                  <Typography>Image ** Default NFT Media File Type</Typography>
                 </Box>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Default NFT Media URI for home, drop list and battle list page"
+                  name="defaultNFTUri"
+                  onChange={handleInputChange}
+                  value={values.defaultNFTUri}
+                  variant="outlined"
+                />
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -406,12 +369,14 @@ export const DropCreate = (props) => {
                 <TextField
                   fullWidth
                   multiline
-                  label="Preview media for random version"
+                  label="Object of Media files for random version"
                   name="previewMedia"
                   rows={5}
                   onChange={handleInputChange}
                   value={values.previewMedia}
+                  helperText="It can be used for heavy video files to show in home, drop list and battle list pages"
                   variant="outlined"
+                  placeholder='{"white": "https://niftyroyale.mypinata.cloud/ipfs/QmRb7A3cEyDqscqf1bN4aBXtDDQan7hpKr9zJAr4QkY116"}'
                 />
               </Grid>
             </Grid>
