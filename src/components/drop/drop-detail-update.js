@@ -170,7 +170,7 @@ export const DropDetailUpdate = (props) => {
   const toastInProgress = () => {
     setIsToast(false)
     setIsToast(true)
-    setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.DROP_CREATE_PROGRESS })
+    setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.DROP_UPDATE_PROGRESS })
   }
   const handleUpdateDrop = async () => {
     if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {

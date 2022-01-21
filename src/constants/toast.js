@@ -26,6 +26,7 @@ export const MESSAGE = {
   DROP_UPDATED: 'Drop updated successfully',
   DROP_DELETED: 'Drop deleted successfully',
   DROP_CREATE_PROGRESS: 'Creating...',
+  DROP_UPDATE_PROGRESS: 'Updating...',
   FAILED: 'Failed!',
 
   PROGRESS: 'Transaction in progress',
