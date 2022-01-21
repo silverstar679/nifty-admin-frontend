@@ -13,11 +13,7 @@ import {
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useEthereumWeb3React } from '../../hooks'
-import {
-  useEthereumNetworkContract,
-  useEthereumContract,
-  usePolygonNetworkContract,
-} from '../../hooks/useContract'
+import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 import _ from 'lodash'
@@ -41,13 +37,10 @@ export const ContractInteraction = (props) => {
   const [toastInfo, setToastInfo] = useState({})
   const { active, account, chainId } = useEthereumWeb3React()
 
-  const [loading, setLoading] = useState(false)
-
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
   const [battleState, setBattleState] = useState(null)
   const [owner, setOwner] = useState('')
-  const [inPlay, setInPlay] = useState([])
   const [isBattleAdded, setIsBattleAdded] = useState(false)
   const [isBattleEnded, setIsBattleEnded] = useState(false)
   const [defaultTokenInfo, setDefaultTokenInfo] = useState([])
@@ -125,7 +118,7 @@ export const ContractInteraction = (props) => {
   const handleIntervalTimeChange = (event) => {
     setIntervalTime(event.target.value)
   }
-  console.log()
+
   const handleEliminatedTokenCountChange = (event) => {
     setEliminatedTokenCount(event.target.value)
   }
@@ -277,12 +270,10 @@ export const ContractInteraction = (props) => {
       ethereumAbi.length !== 0
     ) {
       getDropInfo()
-      ethereumContract.removeAllListeners('BattleStarted')
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
-          console.log('in', intervalTimeRef.current)
-          ;(async () => {
+          ;async () => {
             const tx = await polygonContractWithSigner.addToBattleQueue(
               battleAddressEmitted,
               intervalTimeRef.current,
@@ -293,18 +284,20 @@ export const ContractInteraction = (props) => {
             await tx.wait()
 
             toastCompleted()
-          })().then((e) => {})
-          setInPlay(inPlayEmitted)
+          }
           setBattleState(1)
         }
       })
       ethereumContract.removeAllListeners('BattleEnded')
 
-      ethereumContract.on('BattleEnded', (battleAddress, winnerTokenId, prizeTokenURI, event) => {
-        if (battleAddress === battleAddressEmitted) {
-          setBattleState(2)
+      ethereumContract.on(
+        'BattleEnded',
+        (battleAddressEmitted, winnerTokenId, prizeTokenURI, event) => {
+          if (battleAddress === battleAddressEmitted) {
+            setBattleState(2)
+          }
         }
-      })
+      )
       polygonContract.removeAllListeners('BattleAdded')
 
       polygonContract.on('BattleAdded', (battle, event) => {
@@ -316,6 +309,15 @@ export const ContractInteraction = (props) => {
 
       polygonContract.on('BattleEnded', (finished, gameAddr, winnerTokenId, battleState, event) => {
         if (battleAddress === gameAddr) {
+          ;async () => {
+            const tx = await ethereumContractWithSigner.endBattle(winnerTokenId)
+            setTxHashes({
+              ...txHashes,
+              winnerTokenId: tx.hash,
+            })
+            await tx.wait()
+            toastCompleted()
+          }
           setIsBattleEnded(true)
           setValues({
             ...values,
@@ -654,7 +656,6 @@ export const ContractInteraction = (props) => {
     }
   }
 
-  console.log('out', intervalTimeRef.current)
   if (battleQueueLength === null) return null
   return (
     <>
