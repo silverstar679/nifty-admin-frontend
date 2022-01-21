@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Box,
   Button,
@@ -22,6 +22,11 @@ import { updateDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useEthereumWeb3React } from '../../hooks'
+import fetchPolygonABI from '../../services/fetchPolygonABI'
+import fetchEthereumABI from '../../services/fetchEthereumABI'
+import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
+import { BigNumber } from '@ethersproject/bignumber'
+import { ethers } from 'ethers'
 
 const networks = [
   {
@@ -55,23 +60,23 @@ const types = [
 
 export const DropDetailUpdate = (props) => {
   const { active, account, chainId } = useEthereumWeb3React()
-
+  const ethNetwork =
+    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
-    address: props.drop.address,
+    name: props.drop.name,
     artist: props.drop.artist,
-    created_at: props.drop.created_at,
     creator: props.drop.creator,
+    address: props.drop.address,
+    type: props.drop.type,
+    polygonContractAddress: props.drop.polygonContractAddress,
+    queueId: props.drop.queueId,
     defaultMetadata: props.drop.defaultMetadata,
+    prizeMetadata: props.drop.prizeMetadata,
     defaultNFTUri: props.drop.defaultNFTUri,
     description: props.drop.description,
-    name: props.drop.name,
-    network: props.drop.network,
-    polygonContractAddress: props.drop.polygonContractAddress,
-    prizeMetadata: props.drop.prizeMetadata,
-    queueId: props.drop.queueId,
-    type: props.drop.type,
-    threshold: '',
+    threshold: props.drop.threshold,
     previewMedia: JSON.stringify(props.drop.previewMedia),
+    created_at: props.drop.created_at,
   })
 
   const [checkboxValues, setCheckboxValues] = useState({
@@ -85,6 +90,57 @@ export const DropDetailUpdate = (props) => {
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
+
+  const [ethereumAbi, setEthereumAbi] = useState([])
+
+  const [polygonAbi, setPolygonAbi] = useState([])
+  const [recommendedQueueId, setRecommendedQueueId] = useState(null)
+
+  useEffect(() => {
+    async function getABI() {
+      const abi = await fetchEthereumABI(values.address)
+      setEthereumAbi(abi)
+    }
+    if (values.address) {
+      getABI()
+    }
+  }, [values.address])
+
+  useEffect(() => {
+    async function getABI() {
+      const abi = await fetchPolygonABI(values.polygonContractAddress)
+      setPolygonAbi(abi)
+    }
+    if (values.polygonContractAddress) {
+      getABI()
+    }
+  }, [values.polygonContractAddress])
+
+  const ethereumContract = useEthereumNetworkContract(values.address, ethereumAbi, true)
+
+  const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
+
+  const [battleState, setBattleState] = useState(null)
+  useEffect(() => {
+    async function getQueueId() {
+      Promise.all([polygonContract.battleQueueLength(), ethereumContract.battleState()]).then(
+        ([queueId, battleState]) => {
+          setRecommendedQueueId(parseInt(queueId, 10))
+          setBattleState(battleState)
+        }
+      )
+    }
+    if (
+      ethereumContract &&
+      ethereumContract.provider &&
+      ethereumAbi.length !== 0 &&
+      polygonContract &&
+      polygonContract.provider &&
+      polygonAbi.length !== 0
+    ) {
+      getQueueId()
+    }
+  }, [polygonContract, ethereumContract, polygonAbi, ethereumAbi])
 
   const handleInputChange = (event) => {
     setValues({
@@ -111,24 +167,27 @@ export const DropDetailUpdate = (props) => {
   const handleClose = () => {
     setIsToast(false)
   }
-
+  const toastInProgress = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.DROP_CREATE_PROGRESS })
+  }
   const handleUpdateDrop = async () => {
     if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
       const data = {
         name: values.name,
-        address: values.address,
         artist: values.artist,
         creator: values.creator,
+        address: values.address,
         type: values.type,
-        network: values.network,
+        network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
         description: values.description,
         defaultMetadata: values.defaultMetadata,
         prizeMetadata: values.prizeMetadata,
         defaultNFTUri: values.defaultNFTUri,
-        extra: JSON.parse(values.extra),
-        previewMedia: JSON.parse(values.previewMedia),
+        previewMedia: JSON.parse(values.previewMedia ? values.previewMedia : '{}'),
         threshold: values.threshold,
 
         created_at: values.created_at,
@@ -140,8 +199,9 @@ export const DropDetailUpdate = (props) => {
         dropDate,
         battleDate,
       }
-      setIsToast(false)
+      toastInProgress()
       const updatedDrop = await updateDrop(props.drop._id, data)
+      setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_UPDATED })
     } else {
@@ -150,6 +210,8 @@ export const DropDetailUpdate = (props) => {
       setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
     }
   }
+
+  if (recommendedQueueId === null) return null
 
   return (
     <>
@@ -163,80 +225,12 @@ export const DropDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Drop Name"
-                  name="name"
-                  onChange={handleInputChange}
-                  value={values.name}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Artist Name"
-                  name="artist"
-                  onChange={handleInputChange}
-                  value={values.artist}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Creator Name"
-                  name="creator"
-                  onChange={handleInputChange}
-                  value={values.creator}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
                   label="Ethereum Contract Address"
                   name="address"
                   onChange={handleInputChange}
                   value={values.address}
                   variant="outlined"
                 />
-              </Grid>
-
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Polygon Contract Address"
-                  name="polygonContractAddress"
-                  onChange={handleInputChange}
-                  value={values.polygonContractAddress}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Queue ID for polygon contract"
-                  name="queueId"
-                  onChange={handleInputChange}
-                  value={values.queueId}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Select Ethereum Network"
-                  name="network"
-                  onChange={handleInputChange}
-                  select
-                  value={values.network}
-                  variant="outlined"
-                >
-                  {networks.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
               </Grid>
               <Grid item md={6} xs={12}>
                 <TextField
@@ -254,6 +248,36 @@ export const DropDetailUpdate = (props) => {
                     </MenuItem>
                   ))}
                 </TextField>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Polygon Contract Address"
+                  name="polygonContractAddress"
+                  onChange={handleInputChange}
+                  value={values.polygonContractAddress}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  error={
+                    battleState === 0 && recommendedQueueId !== parseInt(values.queueId)
+                      ? true
+                      : false
+                  }
+                  fullWidth
+                  label="Queue ID for polygon contract"
+                  name="queueId"
+                  onChange={handleInputChange}
+                  value={values.queueId}
+                  helperText={
+                    battleState === 0 &&
+                    recommendedQueueId !== parseInt(values.queueId) &&
+                    `* Please update queue ID with ${recommendedQueueId}`
+                  }
+                  variant="outlined"
+                />
               </Grid>
               <Grid item md={6} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -276,16 +300,6 @@ export const DropDetailUpdate = (props) => {
                 </LocalizationProvider>
               </Grid>
 
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Minimum NFT counts to start battle"
-                  name="threshold"
-                  onChange={handleInputChange}
-                  value={values.threshold}
-                  variant="outlined"
-                />
-              </Grid>
               <Grid item md={6} xs={12}>
                 <FormGroup>
                   <FormControlLabel
@@ -316,36 +330,6 @@ export const DropDetailUpdate = (props) => {
                   />
                 </FormGroup>
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Default Metadata URI"
-                  name="defaultMetadata"
-                  onChange={handleInputChange}
-                  value={values.defaultMetadata}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Prize Metadata URI"
-                  name="prizeMetadata"
-                  onChange={handleInputChange}
-                  value={values.prizeMetadata}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Default NFT Media URI for home, drop list and battle list page"
-                  name="defaultNFTUri"
-                  onChange={handleInputChange}
-                  value={values.defaultNFTUri}
-                  variant="outlined"
-                />
-              </Grid>
               <Grid item md={6} xs={12}>
                 <Box
                   sx={{
@@ -360,8 +344,28 @@ export const DropDetailUpdate = (props) => {
                     onChange={handleCheckboxChange}
                     inputProps={{ 'aria-label': 'controlled' }}
                   />
-                  <Typography>Image</Typography>
+                  <Typography>Image ** Default NFT Media File Type</Typography>
                 </Box>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Minimum NFT counts to start battle"
+                  name="threshold"
+                  onChange={handleInputChange}
+                  value={values.threshold}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Default NFT Media URI for home, drop list and battle list page"
+                  name="defaultNFTUri"
+                  onChange={handleInputChange}
+                  value={values.defaultNFTUri}
+                  variant="outlined"
+                />
               </Grid>
               <Grid item xs={12}>
                 <TextField
@@ -379,12 +383,14 @@ export const DropDetailUpdate = (props) => {
                 <TextField
                   fullWidth
                   multiline
-                  label="Preview media for random version"
+                  label="Object of Media files for random version"
+                  helperText="It can be used for heavy video files to show in home, drop list and battle list pages"
                   name="previewMedia"
                   rows={5}
                   onChange={handleInputChange}
                   value={values.previewMedia}
                   variant="outlined"
+                  placeholder='{"white": "https://niftyroyale.mypinata.cloud/ipfs/QmRb7A3cEyDqscqf1bN4aBXtDDQan7hpKr9zJAr4QkY116"}'
                 />
               </Grid>
             </Grid>

@@ -8,9 +8,6 @@ import {
   Divider,
   Grid,
   TextField,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
   MenuItem,
   Switch,
   Typography,
@@ -26,11 +23,7 @@ import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
-import {
-  useEthereumNetworkContract,
-  useEthereumContract,
-  usePolygonNetworkContract,
-} from '../../hooks/useContract'
+import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 
@@ -86,8 +79,8 @@ export const DropCreate = (props) => {
     isDefaultNFTImage: false,
   })
 
-  const [dropDate, setDropDate] = useState(Date.now())
-  const [battleDate, setBattleDate] = useState(Date.now())
+  const [dropDate, setDropDate] = useState(new Date(Date.now()).toISOString())
+  const [battleDate, setBattleDate] = useState(new Date(Date.now()).toISOString())
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
@@ -194,11 +187,11 @@ export const DropCreate = (props) => {
   }
 
   const handleDropDateChange = (newDate) => {
-    setDropDate(newDate)
+    setDropDate(new Date(newDate).toISOString())
   }
 
   const handleBattleDateChange = (newDate) => {
-    setBattleDate(newDate)
+    setBattleDate(new Date(newDate).toISOString())
   }
 
   const handleClose = () => {
@@ -209,6 +202,22 @@ export const DropCreate = (props) => {
     setIsToast(false)
     setIsToast(true)
     setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.DROP_CREATE_PROGRESS })
+  }
+  const failedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.FAILED })
+  }
+
+  const successToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_CREATED })
+  }
+  const notAdminToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
   }
 
   const handleCreateDrop = async () => {
@@ -239,13 +248,10 @@ export const DropCreate = (props) => {
       }
       toastInProgress()
       const createdDrop = await createDrop(data)
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_CREATED })
+      if (!!createdDrop) successToast()
+      else failedToast()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
+      notAdminToast()
     }
   }
 

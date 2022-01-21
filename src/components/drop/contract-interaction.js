@@ -52,7 +52,7 @@ export const ContractInteraction = (props) => {
   const [isBattleEnded, setIsBattleEnded] = useState(false)
   const [defaultTokenInfo, setDefaultTokenInfo] = useState([])
 
-  const [dropDate, setDropDate] = useState(new Date(Date.now()))
+  const [dropDate, setDropDate] = useState(new Date(Date.now()).toISOString())
 
   const [values, setValues] = useState({
     winnerTokenId: 0,
@@ -99,6 +99,7 @@ export const ContractInteraction = (props) => {
 
   const [intervalTime, _setIntervalTime] = useState(0)
   const [eliminatedTokenCount, _setEliminatedTokenCount] = useState(0)
+  const [battleQueueLength, setBattleQueueLength] = useState(null)
 
   const intervalTimeRef = useRef(intervalTime)
   const setIntervalTime = (x) => {
@@ -124,12 +125,13 @@ export const ContractInteraction = (props) => {
   const handleIntervalTimeChange = (event) => {
     setIntervalTime(event.target.value)
   }
+  console.log()
   const handleEliminatedTokenCountChange = (event) => {
     setEliminatedTokenCount(event.target.value)
   }
 
   const handleDropDateChange = (newDate) => {
-    setDropDate(newDate)
+    setDropDate(new Date(newDate).toISOString())
   }
 
   useEffect(() => {
@@ -165,10 +167,10 @@ export const ContractInteraction = (props) => {
 
   const wallet = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY, provider)
   const polygonWallet = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY, polygonProvider)
-  // const ethereumInjectedContract = useEthereumContract(battleAddress, ethereumAbi, true)
-  const ethereumContractWithSigner = wallet && ethereumContract && ethereumContract.connect(wallet)
+  const ethereumContractWithSigner =
+    wallet && ethereumContract && ethereumContract.provider && ethereumContract.connect(wallet)
   const polygonContractWithSigner =
-    wallet && polygonContract && polygonContract.connect(polygonWallet)
+    wallet && polygonContract && polygonContract.provider && polygonContract.connect(polygonWallet)
 
   useEffect(() => {
     async function getDefaultTokenURIs(_ethereumContract, _index) {
@@ -199,6 +201,7 @@ export const ContractInteraction = (props) => {
         ethereumContract.maxSupply(),
         ethereumContract.unitsPerTransaction(),
         ethereumContract.owner(),
+        polygonContract.battleQueueLength(),
       ]).then(
         ([
           battleState,
@@ -209,13 +212,20 @@ export const ContractInteraction = (props) => {
           maxSupply,
           unitsPerTransaction,
           owner,
+          battleQueueLength,
         ]) => {
           setOwner(owner)
-          setBattleState(battleState)
-          if (battleState !== 0 && queueId) {
+          setBattleState(parseInt(battleState, 10))
+          setBattleQueueLength(parseInt(battleQueueLength, 10))
+          if (parseInt(battleState, 10) !== 0 && queueId) {
             Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
               setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
               setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
+              setIsBattleEnded(true)
+              setValues({
+                ...values,
+                winnerTokenId: battleInfo.winnerTokenId,
+              })
             })
           }
           if (type === 'random') {
@@ -262,13 +272,16 @@ export const ContractInteraction = (props) => {
       ethereumContract &&
       ethereumContract.provider &&
       polygonContract &&
-      polygonContract.provider
+      polygonContract.provider &&
+      polygonAbi.length !== 0 &&
+      ethereumAbi.length !== 0
     ) {
       getDropInfo()
       ethereumContract.removeAllListeners('BattleStarted')
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
+          console.log('in', intervalTimeRef.current)
           ;(async () => {
             const tx = await polygonContractWithSigner.addToBattleQueue(
               battleAddressEmitted,
@@ -283,6 +296,13 @@ export const ContractInteraction = (props) => {
           })().then((e) => {})
           setInPlay(inPlayEmitted)
           setBattleState(1)
+        }
+      })
+      ethereumContract.removeAllListeners('BattleEnded')
+
+      ethereumContract.on('BattleEnded', (battleAddress, winnerTokenId, prizeTokenURI, event) => {
+        if (battleAddress === battleAddressEmitted) {
+          setBattleState(2)
         }
       })
       polygonContract.removeAllListeners('BattleAdded')
@@ -305,7 +325,7 @@ export const ContractInteraction = (props) => {
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ethereumContract, polygonContract])
+  }, [ethereumContract, polygonContract, polygonAbi, ethereumAbi])
 
   const toastInProgress = () => {
     setIsToast(false)
@@ -634,6 +654,8 @@ export const ContractInteraction = (props) => {
     }
   }
 
+  console.log('out', intervalTimeRef.current)
+  if (battleQueueLength === null) return null
   return (
     <>
       <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -651,6 +673,14 @@ export const ContractInteraction = (props) => {
               <Grid container spacing={3}>
                 <Grid item xs={12}>
                   <TextField
+                    error={
+                      battleState === 0 && battleQueueLength !== parseInt(queueId) ? true : false
+                    }
+                    helperText={
+                      battleState === 0 &&
+                      battleQueueLength !== parseInt(queueId) &&
+                      `* Please update queue ID with ${battleQueueLength}`
+                    }
                     fullWidth
                     label="Queue ID"
                     required
@@ -672,6 +702,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleIntervalTimeChange}
                     value={intervalTimeRef.current}
                     variant="outlined"
+                    disabled={battleState !== 0 || battleState === null ? true : false}
                   />
                 </Grid>
                 <Grid item md={6} xs={12}>
@@ -683,6 +714,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCountRef.current}
                     variant="outlined"
+                    disabled={battleState !== 0 || battleState === null ? true : false}
                   />
                 </Grid>
               </Grid>
@@ -701,7 +733,12 @@ export const ContractInteraction = (props) => {
                   p: 2,
                 }}
               >
-                <Button color="primary" variant="contained" onClick={startBattle}>
+                <Button
+                  color="primary"
+                  variant="contained"
+                  onClick={startBattle}
+                  disabled={battleState !== 0 || battleState === null ? true : false}
+                >
                   Start
                 </Button>
               </Box>
@@ -754,6 +791,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleInputChange}
                 value={values.winnerTokenId}
                 variant="outlined"
+                disabled={isBattleEnded === false || battleState === 2 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -764,7 +802,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={endBattle}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={endBattle}
+                disabled={isBattleEnded === false || battleState === 2 ? true : false}
+              >
                 End
               </Button>
             </Box>
@@ -783,6 +826,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleInputChange}
                 value={values.price}
                 variant="outlined"
+                disabled={battleState !== 0 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -793,7 +837,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updateNFTPrice}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updateNFTPrice}
+                disabled={battleState !== 0 ? true : false}
+              >
                 Update
               </Button>
             </Box>
@@ -822,7 +871,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updateDropTime}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updateDropTime}
+                disabled={battleState !== 0 ? true : false}
+              >
                 Update
               </Button>
             </Box>
@@ -841,6 +895,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleInputChange}
                 value={values.baseURI}
                 variant="outlined"
+                disabled={battleState !== 0 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -851,7 +906,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updateBaseURI}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updateBaseURI}
+                disabled={battleState !== 0 ? true : false}
+              >
                 Update
               </Button>
             </Box>
@@ -871,6 +931,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleInputChange}
                     value={values.defaultTokenURI}
                     variant="outlined"
+                    disabled={battleState !== 0 ? true : false}
                   />
                 </CardContent>
                 <Divider />
@@ -881,7 +942,12 @@ export const ContractInteraction = (props) => {
                     p: 2,
                   }}
                 >
-                  <Button color="primary" variant="contained" onClick={updateDefaultTokenURI}>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={updateDefaultTokenURI}
+                    disabled={battleState !== 0 ? true : false}
+                  >
                     Update
                   </Button>
                 </Box>
@@ -904,6 +970,7 @@ export const ContractInteraction = (props) => {
                         onChange={handleInputChange}
                         value={values.defaultTokenURIRandom}
                         variant="outlined"
+                        disabled={battleState !== 0 ? true : false}
                       />
                     </Grid>
                     <Grid item xs={12}>
@@ -914,6 +981,7 @@ export const ContractInteraction = (props) => {
                         onChange={handleInputChange}
                         value={values.defaultTokenCountRandom}
                         variant="outlined"
+                        disabled={battleState !== 0 ? true : false}
                       />
                     </Grid>
                   </Grid>
@@ -926,7 +994,12 @@ export const ContractInteraction = (props) => {
                     p: 2,
                   }}
                 >
-                  <Button color="primary" variant="contained" onClick={addDefaultToken}>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={addDefaultToken}
+                    disabled={battleState !== 0 ? true : false}
+                  >
                     Add
                   </Button>
                 </Box>
@@ -945,6 +1018,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleInputChange}
                     value={values.removableTokenIndex}
                     variant="outlined"
+                    disabled={battleState !== 0 ? true : false}
                   />
                 </CardContent>
                 <Divider />
@@ -955,7 +1029,12 @@ export const ContractInteraction = (props) => {
                     p: 2,
                   }}
                 >
-                  <Button color="primary" variant="contained" onClick={removeDefaultToken}>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={removeDefaultToken}
+                    disabled={battleState !== 0 ? true : false}
+                  >
                     Remove
                   </Button>
                 </Box>
@@ -976,6 +1055,7 @@ export const ContractInteraction = (props) => {
                         onChange={handleInputChange}
                         value={values.defaultTokenURIRandomUpdate}
                         variant="outlined"
+                        disabled={battleState !== 0 ? true : false}
                       />
                     </Grid>
                     <Grid item xs={12}>
@@ -986,6 +1066,7 @@ export const ContractInteraction = (props) => {
                         onChange={handleInputChange}
                         value={values.defaultTokenCountRandomUpdate}
                         variant="outlined"
+                        disabled={battleState !== 0 ? true : false}
                       />
                     </Grid>
                   </Grid>
@@ -998,7 +1079,12 @@ export const ContractInteraction = (props) => {
                     p: 2,
                   }}
                 >
-                  <Button color="primary" variant="contained" onClick={updateDefaultTokenCount}>
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={updateDefaultTokenCount}
+                    disabled={battleState !== 0 ? true : false}
+                  >
                     Update
                   </Button>
                 </Box>
@@ -1019,6 +1105,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleInputChange}
                 value={values.prizeTokenURI}
                 variant="outlined"
+                disabled={battleState !== 0 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1029,7 +1116,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updatePrizeTokenURI}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updatePrizeTokenURI}
+                disabled={battleState !== 0 ? true : false}
+              >
                 Update
               </Button>
             </Box>
@@ -1049,6 +1141,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleInputChange}
                 value={values.maxSupply}
                 variant="outlined"
+                disabled={battleState !== 0 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1059,7 +1152,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updateMaxSupply}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updateMaxSupply}
+                disabled={battleState !== 0 ? true : false}
+              >
                 Update
               </Button>
             </Box>
@@ -1079,6 +1177,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleInputChange}
                 value={values.unitsPerTransaction}
                 variant="outlined"
+                disabled={battleState !== 0 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1089,7 +1188,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updateUnitsPerTransaction}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updateUnitsPerTransaction}
+                disabled={battleState !== 0 ? true : false}
+              >
                 Update
               </Button>
             </Box>
@@ -1182,6 +1286,12 @@ export const ContractInteraction = (props) => {
             <Divider />
             <CardContent>
               <TextField
+                error={battleState === 0 && battleQueueLength !== parseInt(queueId) ? true : false}
+                helperText={
+                  battleState === 0 &&
+                  battleQueueLength !== parseInt(queueId) &&
+                  `* Please update queue ID with ${battleQueueLength}`
+                }
                 fullWidth
                 label="Queue ID"
                 required
@@ -1209,6 +1319,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleIntervalTimeChange}
                 value={intervalTimeRef.current}
                 variant="outlined"
+                disabled={intervalTimeRef.current === 0 || battleState === 2 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1219,7 +1330,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updateIntervalTime}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updateIntervalTime}
+                disabled={intervalTimeRef.current === 0 || battleState === 2 ? true : false}
+              >
                 Update
               </Button>
             </Box>
@@ -1239,6 +1355,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleEliminatedTokenCountChange}
                 value={eliminatedTokenCountRef.current}
                 variant="outlined"
+                disabled={eliminatedTokenCountRef.current === 0 || battleState === 2 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1249,7 +1366,12 @@ export const ContractInteraction = (props) => {
                 p: 2,
               }}
             >
-              <Button color="primary" variant="contained" onClick={updateEliminatedTokenCount}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={updateEliminatedTokenCount}
+                disabled={eliminatedTokenCountRef.current === 0 || battleState === 2 ? true : false}
+              >
                 Update
               </Button>
             </Box>
