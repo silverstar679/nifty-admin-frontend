@@ -150,14 +150,11 @@ export const ContractInteraction = (props) => {
     }
   }, [polygonContractAddress])
 
-  const provider = new ethers.providers.InfuraProvider(
-    parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID),
-    process.env.NEXT_PUBLIC_INFURA_API_KEY
+  const provider = new ethers.providers.JsonRpcProvider(
+    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1'
+      ? process.env.NEXT_PUBLIC_MORALIS_ETHEREUM_RPC
+      : process.env.NEXT_PUBLIC_MORALIS_RINKEBY_RPC
   )
-  // const polygonProvider = new ethers.providers.AlchemyProvider(
-  //   parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID),
-  //   process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
-  // )
   const polygonProvider = new ethers.providers.JsonRpcProvider(
     process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137'
       ? process.env.NEXT_PUBLIC_MORALIS_MATIC_RPC
