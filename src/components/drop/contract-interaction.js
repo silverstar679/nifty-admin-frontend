@@ -46,9 +46,8 @@ export const ContractInteraction = (props) => {
   const [defaultTokenInfo, setDefaultTokenInfo] = useState([])
 
   const [dropDate, setDropDate] = useState(new Date(Date.now()).toISOString())
-
+  const [winnerTokenId, setWinnerTokenId] = useState(0)
   const [values, setValues] = useState({
-    winnerTokenId: 0,
     price: 0,
     baseURI: '',
     defaultTokenURI: '',
@@ -115,6 +114,10 @@ export const ContractInteraction = (props) => {
       [event.target.name]: event.target.value,
     })
   }
+  const handleWinnerTokenIdChange = (event) => {
+    setWinnerTokenId(event.target.value)
+  }
+
   const handleIntervalTimeChange = (event) => {
     setIntervalTime(event.target.value)
   }
@@ -151,9 +154,14 @@ export const ContractInteraction = (props) => {
     parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID),
     process.env.NEXT_PUBLIC_INFURA_API_KEY
   )
-  const polygonProvider = new ethers.providers.AlchemyProvider(
-    parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID),
-    process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+  // const polygonProvider = new ethers.providers.AlchemyProvider(
+  //   parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID),
+  //   process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+  // )
+  const polygonProvider = new ethers.providers.JsonRpcProvider(
+    process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137'
+      ? process.env.NEXT_PUBLIC_MORALIS_MATIC_RPC
+      : process.env.NEXT_PUBLIC_MORALIS_MUMBAI_RPC
   )
   const ethereumContract = useEthereumNetworkContract(battleAddress, ethereumAbi, true)
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
@@ -215,10 +223,7 @@ export const ContractInteraction = (props) => {
               setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
               setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
               setIsBattleEnded(true)
-              setValues({
-                ...values,
-                winnerTokenId: battleInfo.winnerTokenId,
-              })
+              setWinnerTokenId(battleInfo.winnerTokenId)
             })
           }
           if (type === 'random') {
@@ -273,7 +278,7 @@ export const ContractInteraction = (props) => {
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
-          ;async () => {
+          ;(async () => {
             const tx = await polygonContractWithSigner.addToBattleQueue(
               battleAddressEmitted,
               intervalTimeRef.current,
@@ -282,9 +287,9 @@ export const ContractInteraction = (props) => {
             )
             setStartBattlePolyTx(tx.hash)
             await tx.wait()
-
+          })().then((e) => {
             toastCompleted()
-          }
+          })
           setBattleState(1)
         }
       })
@@ -309,20 +314,18 @@ export const ContractInteraction = (props) => {
 
       polygonContract.on('BattleEnded', (finished, gameAddr, winnerTokenId, battleState, event) => {
         if (battleAddress === gameAddr) {
-          ;async () => {
+          ;(async () => {
             const tx = await ethereumContractWithSigner.endBattle(winnerTokenId)
             setTxHashes({
               ...txHashes,
               winnerTokenId: tx.hash,
             })
             await tx.wait()
+          })().then((e) => {
             toastCompleted()
-          }
-          setIsBattleEnded(true)
-          setValues({
-            ...values,
-            winnerTokenId,
           })
+          setIsBattleEnded(true)
+          setWinnerTokenId(winnerTokenId)
         }
       })
     }
@@ -789,8 +792,8 @@ export const ContractInteraction = (props) => {
                 fullWidth
                 label="Winner Token ID"
                 name="winnerTokenId"
-                onChange={handleInputChange}
-                value={values.winnerTokenId}
+                onChange={handleWinnerTokenIdChange}
+                value={winnerTokenId}
                 variant="outlined"
                 disabled={isBattleEnded === false || battleState === 2 ? true : false}
               />
@@ -1320,7 +1323,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleIntervalTimeChange}
                 value={intervalTimeRef.current}
                 variant="outlined"
-                disabled={intervalTimeRef.current === 0 || battleState === 2 ? true : false}
+                disabled={battleState === 1 ? false : true}
               />
             </CardContent>
             <Divider />
@@ -1335,7 +1338,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={updateIntervalTime}
-                disabled={intervalTimeRef.current === 0 || battleState === 2 ? true : false}
+                disabled={battleState === 1 ? false : true}
               >
                 Update
               </Button>
@@ -1356,7 +1359,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleEliminatedTokenCountChange}
                 value={eliminatedTokenCountRef.current}
                 variant="outlined"
-                disabled={eliminatedTokenCountRef.current === 0 || battleState === 2 ? true : false}
+                disabled={battleState === 1 ? false : true}
               />
             </CardContent>
             <Divider />
@@ -1371,7 +1374,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={updateEliminatedTokenCount}
-                disabled={eliminatedTokenCountRef.current === 0 || battleState === 2 ? true : false}
+                disabled={battleState === 1 ? false : true}
               >
                 Update
               </Button>
