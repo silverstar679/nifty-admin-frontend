@@ -137,9 +137,9 @@ export const DropListResults = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {drops.slice(0, limit).map((drop, index) => (
+                {drops.slice(page * limit, page * limit + limit).map((drop, index) => (
                   <TableRow hover key={drop._id}>
-                    <TableCell>{index + 1}</TableCell>
+                    <TableCell>{page * limit + index + 1}</TableCell>
                     <TableCell>
                       <Typography color="textPrimary" variant="body1">
                         {drop.name}

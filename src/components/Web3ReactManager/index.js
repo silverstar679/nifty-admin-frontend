@@ -35,5 +35,6 @@ export default function Web3ReactManager({ children }) {
   if (!triedEager) {
     return null
   }
+
   return children
 }
