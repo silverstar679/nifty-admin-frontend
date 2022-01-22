@@ -268,14 +268,14 @@ export const ContractInteraction = () => {
                     baseURI,
                     parseInt(totalDefaultNFTTypeCount, 10)
                   ))().then((e) => {
-                  setValues({
-                    ...values,
+                  setValues((prevValues) => ({
+                    ...prevValues,
                     price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
                     baseURI,
                     prizeTokenURI,
                     maxSupply: BigNumber.from(maxSupply).toNumber(),
                     unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
-                  })
+                  }))
                   setDropDate(
                     new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString()
                   )
@@ -284,15 +284,15 @@ export const ContractInteraction = () => {
             )
           } else {
             Promise.all([ethereumContract.defaultTokenURI()]).then(([defaultTokenURI]) => {
-              setValues({
-                ...values,
+              setValues((prevValues) => ({
+                ...prevValues,
                 price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
                 baseURI,
                 defaultTokenURI,
                 prizeTokenURI,
                 maxSupply: BigNumber.from(maxSupply).toNumber(),
                 unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
-              })
+              }))
               setDropDate(new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString())
             })
           }
@@ -365,7 +365,7 @@ export const ContractInteraction = () => {
         ethereumContract.removeListener('BattleStarted')
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract, polygonAbi, ethereumAbi])
 
   const toastInProgress = () => {

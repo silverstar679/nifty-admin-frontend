@@ -151,12 +151,12 @@ export const DropCreate = (props) => {
     async function getDropInfo() {
       Promise.all([ethereumContract.name(), ethereumContract.baseURI()]).then(([name, baseURI]) => {
         if (mounted) {
-          setValues({
-            ...values,
+          setValues((prevValues) => ({
+            ...prevValues,
             name: name.split(':')[1],
             artist: name.split(':')[0].split('X')[1],
             creator: name.split(':')[0].split('X')[0],
-          })
+          }))
         }
       })
     }
@@ -173,10 +173,10 @@ export const DropCreate = (props) => {
     async function getQueueId() {
       Promise.all([polygonContract.battleQueueLength()]).then(([queueId]) => {
         if (mounted) {
-          setValues({
-            ...values,
+          setValues((prevValues) => ({
+            ...prevValues,
             queueId: BigNumber.from(queueId).toNumber(),
-          })
+          }))
         }
       })
     }
