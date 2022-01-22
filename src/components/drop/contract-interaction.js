@@ -23,16 +23,38 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
 import { displayAddress } from '../../utils/displayAddress'
+import { getAllDrops } from '../../services/apis'
+import { useRouter } from 'next/router'
 
-export const ContractInteraction = (props) => {
+export const ContractInteraction = () => {
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? '' : 'rinkeby.'
   const polyNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? '' : 'mumbai.'
-  const battleAddress = props.drop.address
-  const polygonContractAddress = props.drop.polygonContractAddress
-  const queueId = props.drop.queueId
-  const type = props.drop.type
+  const router = useRouter()
+  const { address } = router.query
+  const battleAddress = address
+
+  const [drop, setDrop] = useState(null)
+
+  useEffect(() => {
+    let mounted = true
+    async function getDrops() {
+      const drops = await getAllDrops()
+      const drop = _.find(drops, { address: address })
+      if (mounted) {
+        setDrop(drop)
+      }
+    }
+    getDrops()
+    return () => {
+      mounted = false
+    }
+  }, [address])
+
+  const polygonContractAddress = drop && drop.polygonContractAddress
+  const queueId = drop && drop.queueId
+  const type = drop && drop.type
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
   const { active, account, chainId } = useEthereumWeb3React()
@@ -289,18 +311,26 @@ export const ContractInteraction = (props) => {
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
-          ;(async () => {
-            const tx = await polygonContractWithSigner.addToBattleQueue(
+          Promise.all([
+            polygonContractWithSigner.addToBattleQueue(
               battleAddressEmitted,
               intervalTimeRef.current,
               inPlayEmitted,
               eliminatedTokenCountRef.current
-            )
-            setStartBattlePolyTx(tx.hash)
-            await tx.wait()
-          })().then((e) => {
+            ),
+          ]).then((_) => {
             toastCompleted()
           })
+          // ;(async () => {
+          //   const tx = await polygonContractWithSigner.addToBattleQueue(
+          //     battleAddressEmitted,
+          //     intervalTimeRef.current,
+          //     inPlayEmitted,
+          //     eliminatedTokenCountRef.current
+          //   )
+          //   setStartBattlePolyTx(tx.hash)
+          // })().then((e) => {
+          // })
           setBattleState(1)
         }
       })
@@ -325,16 +355,18 @@ export const ContractInteraction = (props) => {
 
       polygonContract.on('BattleEnded', (finished, gameAddr, winnerTokenId, battleState, event) => {
         if (battleAddress === gameAddr) {
-          ;(async () => {
-            const tx = await ethereumContractWithSigner.endBattle(winnerTokenId)
-            setTxHashes({
-              ...txHashes,
-              winnerTokenId: tx.hash,
-            })
-            await tx.wait()
-          })().then((e) => {
+          Promise.all([ethereumContractWithSigner.endBattle(winnerTokenId)]).then((_) => {
             toastCompleted()
           })
+          // ;(async () => {
+          //   const tx = await ethereumContractWithSigner.endBattle(winnerTokenId)
+          //   setTxHashes({
+          //     ...txHashes,
+          //     winnerTokenId: tx.hash,
+          //   })
+          // })().then((e) => {
+          //   toastCompleted()
+          // })
           setIsBattleEnded(true)
           setWinnerTokenId(winnerTokenId)
         }
@@ -669,7 +701,7 @@ export const ContractInteraction = (props) => {
   const updateDefaultTokenCount = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.addTokenURI(
+      const tx = await ethereumContractWithSigner.updateTokenURICount(
         values.defaultTokenURIRandomUpdate,
         values.defaultTokenCountRandomUpdate
       )
@@ -1155,43 +1187,45 @@ export const ContractInteraction = (props) => {
               </Button>
             </Box>
           </Card>
+          {type !== 'random' && (
+            <>
+              <Box sx={{ py: 1 }} />
 
-          <Box sx={{ py: 1 }} />
-
-          <Card>
-            <CardHeader title="Set Maximum Purchaseable Amount" sx={{ py: 1 }} />
-            <Divider />
-            <CardContent>
-              <TextField
-                fullWidth
-                label="Max Purchaseable Amount"
-                name="maxSupply"
-                type="number"
-                onChange={handleInputChange}
-                value={values.maxSupply}
-                variant="outlined"
-                disabled={battleState !== 0 ? true : false}
-              />
-            </CardContent>
-            <Divider />
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-start',
-                p: 2,
-              }}
-            >
-              <Button
-                color="primary"
-                variant="contained"
-                onClick={updateMaxSupply}
-                disabled={battleState !== 0 ? true : false}
-              >
-                Update
-              </Button>
-            </Box>
-          </Card>
-
+              <Card>
+                <CardHeader title="Set Maximum Purchaseable Amount" sx={{ py: 1 }} />
+                <Divider />
+                <CardContent>
+                  <TextField
+                    fullWidth
+                    label="Max Purchaseable Amount"
+                    name="maxSupply"
+                    type="number"
+                    onChange={handleInputChange}
+                    value={values.maxSupply}
+                    variant="outlined"
+                    disabled={battleState !== 0 ? true : false}
+                  />
+                </CardContent>
+                <Divider />
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'flex-start',
+                    p: 2,
+                  }}
+                >
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={updateMaxSupply}
+                    disabled={battleState !== 0 ? true : false}
+                  >
+                    Update
+                  </Button>
+                </Box>
+              </Card>
+            </>
+          )}
           <Box sx={{ py: 1 }} />
 
           <Card>

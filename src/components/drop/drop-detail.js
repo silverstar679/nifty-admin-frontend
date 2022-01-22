@@ -38,11 +38,11 @@ export const DropDetail = (props) => {
           </TabList>
         </Box>
         <TabPanel value="1">
-          <DropDetailUpdate drop={drop} />
+          <DropDetailUpdate />
         </TabPanel>
         {drop && drop.type !== 'old' && (
           <TabPanel value="2">
-            <ContractInteraction drop={drop} />
+            <ContractInteraction />
           </TabPanel>
         )}
       </TabContext>
