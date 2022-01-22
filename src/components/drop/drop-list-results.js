@@ -110,7 +110,6 @@ export const DropListResults = () => {
   }
 
   const handlePageChange = (event, newPage) => {
-    console.log(newPage)
     setPage(newPage)
   }
   if (drops === []) return null
