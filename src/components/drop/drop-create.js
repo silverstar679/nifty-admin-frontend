@@ -16,7 +16,7 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
 import { createDrop } from 'src/services/apis'
-import { InfoToast } from '../Toast'
+import { TransactionInfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useEthereumWeb3React } from '../../hooks'
 import { getAllDrops } from '../../services/apis'
@@ -25,7 +25,6 @@ import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
-import { ethers } from 'ethers'
 
 const networks = [
   {
@@ -91,11 +90,17 @@ export const DropCreate = (props) => {
   const [polygonAbi, setPolygonAbi] = useState([])
 
   useEffect(() => {
+    let mounted = true
     async function getDrops() {
       const drops = await getAllDrops()
-      setDrops(drops)
+      if (mounted) {
+        setDrops(drops)
+      }
     }
     getDrops()
+    return () => {
+      mounted = false
+    }
   }, [])
 
   useEffect(() => {
@@ -120,22 +125,37 @@ export const DropCreate = (props) => {
   }, [drops, values.polygonContractAddress])
 
   useEffect(() => {
+    let mounted = true
+
     async function getABI() {
       const abi = await fetchEthereumABI(values.address)
-      setEthereumAbi(abi)
+      if (mounted) {
+        setEthereumAbi(abi)
+      }
     }
     if (values.address) {
       getABI()
     }
+
+    return () => {
+      mounted = false
+    }
   }, [values.address])
 
   useEffect(() => {
+    let mounted = true
+
     async function getABI() {
       const abi = await fetchPolygonABI(values.polygonContractAddress)
-      setPolygonAbi(abi)
+      if (mounted) {
+        setPolygonAbi(abi)
+      }
     }
     if (values.polygonContractAddress) {
       getABI()
+    }
+    return () => {
+      mounted = false
     }
   }, [values.polygonContractAddress])
 
@@ -143,32 +163,46 @@ export const DropCreate = (props) => {
   const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
 
   useEffect(() => {
+    let mounted = true
+
     async function getDropInfo() {
       Promise.all([ethereumContract.name(), ethereumContract.baseURI()]).then(([name, baseURI]) => {
-        setValues({
-          ...values,
-          name: name.split(':')[1],
-          artist: name.split(':')[0].split('X')[1],
-          creator: name.split(':')[0].split('X')[0],
-        })
+        if (mounted) {
+          setValues({
+            ...values,
+            name: name.split(':')[1],
+            artist: name.split(':')[0].split('X')[1],
+            creator: name.split(':')[0].split('X')[0],
+          })
+        }
       })
     }
     if (ethereumContract && ethereumContract.provider && ethereumAbi.length !== 0) {
       getDropInfo()
     }
+    return () => {
+      mounted = false
+    }
   }, [ethereumContract, ethereumAbi])
 
   useEffect(() => {
+    let mounted = true
     async function getQueueId() {
       Promise.all([polygonContract.battleQueueLength()]).then(([queueId]) => {
-        setValues({
-          ...values,
-          queueId: BigNumber.from(queueId).toNumber(),
-        })
+        if (mounted) {
+          setValues({
+            ...values,
+            queueId: BigNumber.from(queueId).toNumber(),
+          })
+        }
       })
     }
     if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
       getQueueId()
+    }
+
+    return () => {
+      mounted = false
     }
   }, [polygonContract, polygonAbi])
 
@@ -257,7 +291,7 @@ export const DropCreate = (props) => {
 
   return (
     <>
-      <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
+      <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       <form autoComplete="off" noValidate {...props}>
         <Card>

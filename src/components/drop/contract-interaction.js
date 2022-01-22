@@ -131,22 +131,36 @@ export const ContractInteraction = (props) => {
   }
 
   useEffect(() => {
+    let mounted = true
     async function getABI() {
       const abi = await fetchEthereumABI(battleAddress)
-      setEthereumAbi(abi)
+      if (mounted) {
+        setEthereumAbi(abi)
+      }
     }
     if (battleAddress) {
       getABI()
     }
+
+    return () => {
+      mounted = false
+    }
   }, [battleAddress])
 
   useEffect(() => {
+    let mounted = true
+
     async function getABI() {
       const abi = await fetchPolygonABI(polygonContractAddress)
-      setPolygonAbi(abi)
+      if (mounted) {
+        setPolygonAbi(abi)
+      }
     }
     if (polygonContractAddress) {
       getABI()
+    }
+    return () => {
+      mounted = false
     }
   }, [polygonContractAddress])
 
@@ -325,6 +339,22 @@ export const ContractInteraction = (props) => {
           setWinnerTokenId(winnerTokenId)
         }
       })
+    }
+
+    return () => {
+      if (
+        ethereumContract &&
+        polygonContract &&
+        ethereumContract.provider &&
+        polygonContract.provider
+      ) {
+        if (!isOldVersion) {
+          polygonContract.removeListener('BattleEnded')
+          polygonContract.removeListener('BattleAdded')
+          ethereumContract.removeListener('BattleEnded')
+          ethereumContract.removeListener('BattleStarted')
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract, polygonAbi, ethereumAbi])

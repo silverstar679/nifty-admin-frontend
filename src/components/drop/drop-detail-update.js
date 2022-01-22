@@ -19,14 +19,12 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
 import { updateDrop } from 'src/services/apis'
-import { InfoToast } from '../Toast'
+import { TransactionInfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useEthereumWeb3React } from '../../hooks'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
-import { BigNumber } from '@ethersproject/bignumber'
-import { ethers } from 'ethers'
 
 const networks = [
   {
@@ -97,22 +95,35 @@ export const DropDetailUpdate = (props) => {
   const [recommendedQueueId, setRecommendedQueueId] = useState(null)
 
   useEffect(() => {
+    let mounted = true
     async function getABI() {
       const abi = await fetchEthereumABI(values.address)
-      setEthereumAbi(abi)
+      if (mounted) {
+        setEthereumAbi(abi)
+      }
     }
     if (values.address) {
       getABI()
     }
+    return () => {
+      mounted = false
+    }
   }, [values.address])
 
   useEffect(() => {
+    let mounted = true
+
     async function getABI() {
       const abi = await fetchPolygonABI(values.polygonContractAddress)
-      setPolygonAbi(abi)
+      if (mounted) {
+        setPolygonAbi(abi)
+      }
     }
     if (values.polygonContractAddress) {
       getABI()
+    }
+    return () => {
+      mounted = false
     }
   }, [values.polygonContractAddress])
 
@@ -122,11 +133,15 @@ export const DropDetailUpdate = (props) => {
 
   const [battleState, setBattleState] = useState(null)
   useEffect(() => {
+    let mounted = true
+
     async function getQueueId() {
       Promise.all([polygonContract.battleQueueLength(), ethereumContract.battleState()]).then(
         ([queueId, battleState]) => {
-          setRecommendedQueueId(parseInt(queueId, 10))
-          setBattleState(battleState)
+          if (mounted) {
+            setRecommendedQueueId(parseInt(queueId, 10))
+            setBattleState(battleState)
+          }
         }
       )
     }
@@ -139,6 +154,9 @@ export const DropDetailUpdate = (props) => {
       polygonAbi.length !== 0
     ) {
       getQueueId()
+    }
+    return () => {
+      mounted = false
     }
   }, [polygonContract, ethereumContract, polygonAbi, ethereumAbi])
 
@@ -215,7 +233,7 @@ export const DropDetailUpdate = (props) => {
 
   return (
     <>
-      <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
+      <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
       <form autoComplete="off" noValidate {...props}>
         <Card>
           <CardHeader subheader="The information can be edited" title="Drop Details" />
