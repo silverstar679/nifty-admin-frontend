@@ -108,27 +108,6 @@ export const DropCreate = (props) => {
   }, [])
 
   useEffect(() => {
-    if (drops.length !== 0 && values.polygonContractAddress !== '') {
-      const nextQueueId =
-        parseInt(
-          _.last(
-            _.sortBy(
-              _.filter(drops, {
-                polygonContractAddress: values.polygonContractAddress,
-              }),
-              ['queueId']
-            )
-          ).queueId
-        ) + 1
-      setValues({
-        ...values,
-        queueId: nextQueueId,
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drops, values.polygonContractAddress])
-
-  useEffect(() => {
     let mounted = true
 
     async function getABI() {

@@ -311,26 +311,17 @@ export const ContractInteraction = () => {
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
-          Promise.all([
-            polygonContractWithSigner.addToBattleQueue(
+          ;(async () => {
+            const tx = await polygonContractWithSigner.addToBattleQueue(
               battleAddressEmitted,
               intervalTimeRef.current,
               inPlayEmitted,
               eliminatedTokenCountRef.current
-            ),
-          ]).then((_) => {
+            )
+            setStartBattlePolyTx(tx.hash)
+            await tx.wait()
             toastCompleted()
-          })
-          // ;(async () => {
-          //   const tx = await polygonContractWithSigner.addToBattleQueue(
-          //     battleAddressEmitted,
-          //     intervalTimeRef.current,
-          //     inPlayEmitted,
-          //     eliminatedTokenCountRef.current
-          //   )
-          //   setStartBattlePolyTx(tx.hash)
-          // })().then((e) => {
-          // })
+          })().then((e) => {})
           setBattleState(1)
         }
       })
@@ -355,20 +346,8 @@ export const ContractInteraction = () => {
 
       polygonContract.on('BattleEnded', (finished, gameAddr, winnerTokenId, battleState, event) => {
         if (battleAddress === gameAddr) {
-          Promise.all([ethereumContractWithSigner.endBattle(winnerTokenId)]).then((_) => {
-            toastCompleted()
-          })
-          // ;(async () => {
-          //   const tx = await ethereumContractWithSigner.endBattle(winnerTokenId)
-          //   setTxHashes({
-          //     ...txHashes,
-          //     winnerTokenId: tx.hash,
-          //   })
-          // })().then((e) => {
-          //   toastCompleted()
-          // })
+          setWinnerTokenId(parseInt(winnerTokenId, 10))
           setIsBattleEnded(true)
-          setWinnerTokenId(winnerTokenId)
         }
       })
     }
@@ -435,7 +414,6 @@ export const ContractInteraction = () => {
         ...txHashes,
         startBattleEth: tx.hash,
       })
-      await tx.wait()
     } else {
       toastNotOwner()
     }
@@ -525,7 +503,7 @@ export const ContractInteraction = () => {
   const endBattle = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.endBattle(values.winnerTokenId)
+      const tx = await ethereumContractWithSigner.endBattle(winnerTokenId)
       setTxHashes({
         ...txHashes,
         winnerTokenId: tx.hash,

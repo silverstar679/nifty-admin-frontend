@@ -91,12 +91,14 @@ export const DropDetailUpdate = () => {
   const [dropDate, setDropDate] = useState(new Date(Date.now()))
   const [battleDate, setBattleDate] = useState(new Date(Date.now()))
 
+  const [drop, setDrop] = useState(null)
   useEffect(() => {
     let mounted = true
     async function getDrops() {
       const drops = await getAllDrops()
       const drop = _.find(drops, { address: address })
       if (mounted) {
+        setDrop(drop)
         setValues({
           name: drop.name,
           artist: drop.artist,
@@ -262,7 +264,7 @@ export const DropDetailUpdate = () => {
         battleDate,
       }
       toastInProgress()
-      const updatedDrop = await updateDrop(_id, data)
+      const updatedDrop = await updateDrop(drop._id, data)
       setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_UPDATED })
