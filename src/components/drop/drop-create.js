@@ -11,6 +11,9 @@ import {
   MenuItem,
   Switch,
   Typography,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
@@ -76,6 +79,7 @@ export const DropCreate = (props) => {
     isDropEnded: false,
     isBattleEnded: false,
     isDefaultNFTImage: false,
+    isFutureDrop: false,
   })
 
   const [dropDate, setDropDate] = useState(new Date(Date.now()).toISOString())
@@ -276,6 +280,7 @@ export const DropCreate = (props) => {
         isDropEnded: checkboxValues.isDropEnded,
         isBattleEnded: checkboxValues.isBattleEnded,
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
+        isFutureDrop: checkboxValues.isFutureDrop,
 
         dropDate,
         battleDate,
@@ -382,6 +387,21 @@ export const DropCreate = (props) => {
                   />
                   <Typography>Image ** Default NFT Media File Type</Typography>
                 </Box>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="isFutureDrop"
+                        checked={checkboxValues.isFutureDrop}
+                        onChange={handleCheckboxChange}
+                        inputProps={{ 'aria-label': 'controlled' }}
+                      />
+                    }
+                    label="Only show on Future Drop, not on Drop and Battle List page?"
+                  />
+                </FormGroup>
               </Grid>
               <Grid item xs={12}>
                 <TextField

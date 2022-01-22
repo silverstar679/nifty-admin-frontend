@@ -348,12 +348,10 @@ export const ContractInteraction = (props) => {
         ethereumContract.provider &&
         polygonContract.provider
       ) {
-        if (!isOldVersion) {
-          polygonContract.removeListener('BattleEnded')
-          polygonContract.removeListener('BattleAdded')
-          ethereumContract.removeListener('BattleEnded')
-          ethereumContract.removeListener('BattleStarted')
-        }
+        polygonContract.removeListener('BattleEnded')
+        polygonContract.removeListener('BattleAdded')
+        ethereumContract.removeListener('BattleEnded')
+        ethereumContract.removeListener('BattleStarted')
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

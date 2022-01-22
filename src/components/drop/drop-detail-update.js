@@ -81,6 +81,7 @@ export const DropDetailUpdate = (props) => {
     isDropEnded: props.drop.isDropEnded,
     isBattleEnded: props.drop.isBattleEnded,
     isDefaultNFTImage: props.drop.isDefaultNFTImage,
+    isFutureDrop: props.drop.isFutureDrop,
   })
 
   const [dropDate, setDropDate] = useState(props.drop.dropDate)
@@ -213,6 +214,7 @@ export const DropDetailUpdate = (props) => {
         isDropEnded: checkboxValues.isDropEnded,
         isBattleEnded: checkboxValues.isBattleEnded,
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
+        isFutureDrop: checkboxValues.isFutureDrop,
 
         dropDate,
         battleDate,
@@ -349,6 +351,31 @@ export const DropDetailUpdate = (props) => {
                 </FormGroup>
               </Grid>
               <Grid item md={6} xs={12}>
+                <FormGroup>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        name="isFutureDrop"
+                        checked={checkboxValues.isFutureDrop}
+                        onChange={handleCheckboxChange}
+                        inputProps={{ 'aria-label': 'controlled' }}
+                      />
+                    }
+                    label="Only show on Future Drop, not on Drop and Battle List page?"
+                  />
+                </FormGroup>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Minimum NFT counts to start battle"
+                  name="threshold"
+                  onChange={handleInputChange}
+                  value={values.threshold}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -364,16 +391,6 @@ export const DropDetailUpdate = (props) => {
                   />
                   <Typography>Image ** Default NFT Media File Type</Typography>
                 </Box>
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Minimum NFT counts to start battle"
-                  name="threshold"
-                  onChange={handleInputChange}
-                  value={values.threshold}
-                  variant="outlined"
-                />
               </Grid>
               <Grid item xs={12}>
                 <TextField

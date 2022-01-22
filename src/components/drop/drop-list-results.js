@@ -56,12 +56,18 @@ export const DropListResults = () => {
   const [drops, setDrops] = useState([])
 
   useEffect(() => {
+    let mounted = true
     async function getDrops() {
       const drops = await getAllDrops()
       const sortedDrops = _.reverse(_.sortBy(drops, ['created_at']))
-      setDrops(sortedDrops)
+      if (mounted) {
+        setDrops(sortedDrops)
+      }
     }
     getDrops()
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const handleClickOpen = (id) => {
