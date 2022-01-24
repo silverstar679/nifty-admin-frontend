@@ -21,7 +21,7 @@ import DateTimePicker from '@mui/lab/DateTimePicker'
 import { updateDrop } from 'src/services/apis'
 import { TransactionInfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
-import { useEthereumWeb3React } from '../../hooks'
+import { useWeb3React } from '../../hooks'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
@@ -59,7 +59,7 @@ const types = [
 ]
 
 export const DropDetailUpdate = () => {
-  const { active, account, chainId } = useEthereumWeb3React()
+  const { active, account, chainId } = useWeb3React()
   const router = useRouter()
   const { address } = router.query
   const ethNetwork =
@@ -236,7 +236,10 @@ export const DropDetailUpdate = () => {
     setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.DROP_UPDATE_PROGRESS })
   }
   const handleUpdateDrop = async () => {
-    if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
+    if (
+      account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
+      account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT
+    ) {
       const data = {
         name: values.name,
         artist: values.artist,

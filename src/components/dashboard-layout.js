@@ -49,7 +49,10 @@ export const DashboardLayout = (props) => {
 
   useEffect(() => {
     if (active) {
-      if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
+      if (
+        account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
+        account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT
+      ) {
         connectedToast()
       } else {
         toastNotOwner()
@@ -63,20 +66,22 @@ export const DashboardLayout = (props) => {
     <>
       <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
-      {active && account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT && (
-        <DashboardLayoutRoot>
-          <Box
-            sx={{
-              display: 'flex',
-              flex: '1 1 auto',
-              flexDirection: 'column',
-              width: '100%',
-            }}
-          >
-            {children}
-          </Box>
-        </DashboardLayoutRoot>
-      )}
+      {active &&
+        (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
+          account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT) && (
+          <DashboardLayoutRoot>
+            <Box
+              sx={{
+                display: 'flex',
+                flex: '1 1 auto',
+                flexDirection: 'column',
+                width: '100%',
+              }}
+            >
+              {children}
+            </Box>
+          </DashboardLayoutRoot>
+        )}
 
       <DashboardNavbar onSidebarOpen={() => setSidebarOpen(true)} />
       <DashboardSidebar onClose={() => setSidebarOpen(false)} open={isSidebarOpen} />

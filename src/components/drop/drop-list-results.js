@@ -28,7 +28,7 @@ import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
-import { useEthereumWeb3React } from '../../hooks'
+import { useWeb3React } from '../../hooks'
 
 const NETWORKS = {
   mainnet: 'Mainnet',
@@ -43,12 +43,12 @@ const TYPES = {
 }
 
 export const DropListResults = () => {
-  const { active, account, chainId } = useEthereumWeb3React()
+  const { active, account, chainId } = useWeb3React()
 
   const [limit, setLimit] = useState(10)
   const [page, setPage] = useState(0)
   const [openDialog, setOpenDialog] = useState(false)
-  const [selectedId, setSelectedId] = useState('')
+  // const [selectedId, setSelectedId] = useState('')
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
@@ -83,14 +83,17 @@ export const DropListResults = () => {
     setIsToast(false)
   }
 
-  const handleDeleteDrop = async () => {
-    if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
+  const handleDeleteDrop = async (id) => {
+    if (
+      account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
+      account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT
+    ) {
       setIsToast(false)
 
-      const deletedDrop = await deleteDrop(selectedId)
+      const deletedDrop = await deleteDrop(id)
 
       const filteredDrops = _.filter(drops, function (o) {
-        return o._id !== selectedId
+        return o._id !== id
       })
       setDrops(filteredDrops)
 
@@ -177,7 +180,7 @@ export const DropListResults = () => {
                           </IconButton>
                         </NextLink>
 
-                        <IconButton size="small" onClick={() => handleClickOpen(drop._id)}>
+                        <IconButton size="small" onClick={() => handleDeleteDrop(drop._id)}>
                           <DeleteForeverIcon fontSize="small" color="error" />
                         </IconButton>
                       </Box>
@@ -198,7 +201,7 @@ export const DropListResults = () => {
           rowsPerPageOptions={[5, 10, 25]}
         />
       </Card>
-      <Dialog
+      {/* <Dialog
         open={openDialog}
         onClose={handleDialogClose}
         aria-labelledby="alert-dialog-title"
@@ -216,7 +219,7 @@ export const DropListResults = () => {
             Ok
           </Button>
         </DialogActions>
-      </Dialog>
+      </Dialog> */}
     </>
   )
 }

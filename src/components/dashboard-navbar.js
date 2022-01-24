@@ -2,7 +2,7 @@ import PropTypes from 'prop-types'
 import styled from '@emotion/styled'
 import { AppBar, Box, IconButton, Toolbar, Button } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
-import { useEthereumWeb3React } from '../hooks'
+import { useWeb3React } from '../hooks'
 import { displayAddress } from '../utils/displayAddress'
 import { injected } from '../connectors'
 
@@ -20,7 +20,7 @@ const WalletButton = styled(Button)({
 
 export const DashboardNavbar = (props) => {
   const { onSidebarOpen, ...other } = props
-  const { deactivate, account, activate, active } = useEthereumWeb3React()
+  const { deactivate, account, activate, active } = useWeb3React()
 
   const handleConnectWallet = () => {
     active ? deactivate() : activate(injected)

@@ -4,7 +4,7 @@ import { isMobile } from 'react-device-detect'
 import { injected } from '../connectors'
 import { PolygonNetworkContextName, EthereumNetworkContextName } from '../constants'
 
-export function useEthereumWeb3React() {
+export function useWeb3React() {
   return useWeb3ReactCore()
 }
 

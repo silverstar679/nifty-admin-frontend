@@ -1,19 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardHeader,
-  Divider,
-  Grid,
-  TextField,
-  Link,
-} from '@mui/material'
+import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
-import { useEthereumWeb3React } from '../../hooks'
-import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
+import { useWeb3React } from '../../hooks'
+import {
+  useEthereumContract,
+  usePolygonContract,
+  useEthereumNetworkContract,
+  usePolygonNetworkContract,
+} from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 import _ from 'lodash'
@@ -22,7 +17,6 @@ import { MESSAGE, SEVERITY } from '../../constants/toast'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
-import { displayAddress } from '../../utils/displayAddress'
 import { getAllDrops } from '../../services/apis'
 import { useRouter } from 'next/router'
 
@@ -57,15 +51,17 @@ export const ContractInteraction = () => {
   const type = drop && drop.type
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
-  const { active, account, chainId } = useEthereumWeb3React()
+  const { active, account, chainId } = useWeb3React()
 
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
   const [battleState, setBattleState] = useState(null)
   const [owner, setOwner] = useState('')
+  const [ownerPolygon, setOwnerPolygon] = useState('')
   const [isBattleAdded, setIsBattleAdded] = useState(false)
   const [isBattleEnded, setIsBattleEnded] = useState(false)
   const [defaultTokenInfo, setDefaultTokenInfo] = useState([])
+  const [inPlay, setInPlay] = useState([])
 
   const [dropDate, setDropDate] = useState(new Date(Date.now()).toISOString())
   const [winnerTokenId, setWinnerTokenId] = useState(0)
@@ -90,42 +86,10 @@ export const ContractInteraction = () => {
     erc20AmountPolyNet: 0,
     erc20TokenAddressPolyNet: '',
   })
-  const [txHashes, setTxHashes] = useState({
-    winnerTokenId: '',
-    startBattleEth: '',
-    price: '',
-    dropTime: '',
-    baseURI: '',
-    defaultTokenURI: '',
-    prizeTokenURI: '',
-    maxSupply: '',
-    prizeTokenURI: '',
-    maxSupply: '',
-    unitsPerTransaction: '',
-    withdrawEthEthNet: '',
-    withdrawErc20EthNet: '',
-    withdrawEthPolyNet: '',
-    withdrawErc20PolyNet: '',
-    intervalTime: '',
-    eliminatedTokenCount: '',
-  })
-  const [startBattlePolyTx, setStartBattlePolyTx] = useState('')
 
-  const [intervalTime, _setIntervalTime] = useState(0)
-  const [eliminatedTokenCount, _setEliminatedTokenCount] = useState(0)
+  const [intervalTime, setIntervalTime] = useState(0)
+  const [eliminatedTokenCount, setEliminatedTokenCount] = useState(0)
   const [battleQueueLength, setBattleQueueLength] = useState(null)
-
-  const intervalTimeRef = useRef(intervalTime)
-  const setIntervalTime = (x) => {
-    intervalTimeRef.current = x // keep updated
-    _setIntervalTime(x)
-  }
-
-  const eliminatedTokenCountRef = useRef(eliminatedTokenCount)
-  const setEliminatedTokenCount = (x) => {
-    eliminatedTokenCountRef.current = x // keep updated
-    _setEliminatedTokenCount(x)
-  }
 
   const handleClose = () => {
     setIsToast(false)
@@ -186,25 +150,10 @@ export const ContractInteraction = () => {
     }
   }, [polygonContractAddress])
 
-  const provider = new ethers.providers.JsonRpcProvider(
-    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1'
-      ? process.env.NEXT_PUBLIC_MORALIS_ETHEREUM_RPC
-      : process.env.NEXT_PUBLIC_MORALIS_RINKEBY_RPC
-  )
-  const polygonProvider = new ethers.providers.JsonRpcProvider(
-    process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137'
-      ? process.env.NEXT_PUBLIC_MORALIS_MATIC_RPC
-      : process.env.NEXT_PUBLIC_MORALIS_MUMBAI_RPC
-  )
   const ethereumContract = useEthereumNetworkContract(battleAddress, ethereumAbi, true)
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
-
-  const wallet = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY, provider)
-  const polygonWallet = new ethers.Wallet(process.env.NEXT_PUBLIC_PRIVATE_KEY, polygonProvider)
-  const ethereumContractWithSigner =
-    wallet && ethereumContract && ethereumContract.provider && ethereumContract.connect(wallet)
-  const polygonContractWithSigner =
-    wallet && polygonContract && polygonContract.provider && polygonContract.connect(polygonWallet)
+  const ethereumInjectedContract = useEthereumContract(battleAddress, ethereumAbi, true)
+  const polygonInjectedContract = usePolygonContract(polygonContractAddress, polygonAbi, true)
 
   useEffect(() => {
     async function getDefaultTokenURIs(_ethereumContract, _index) {
@@ -235,6 +184,7 @@ export const ContractInteraction = () => {
         ethereumContract.maxSupply(),
         ethereumContract.unitsPerTransaction(),
         ethereumContract.owner(),
+        polygonContract.owner(),
         polygonContract.battleQueueLength(),
       ]).then(
         ([
@@ -246,16 +196,18 @@ export const ContractInteraction = () => {
           maxSupply,
           unitsPerTransaction,
           owner,
+          ownerPolygon,
           battleQueueLength,
         ]) => {
           setOwner(owner)
+          setOwnerPolygon(ownerPolygon)
           setBattleState(parseInt(battleState, 10))
           setBattleQueueLength(parseInt(battleQueueLength, 10))
           if (parseInt(battleState, 10) !== 0 && queueId) {
             Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
               setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
               setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
-              setIsBattleEnded(true)
+              setIsBattleEnded(battleInfo.battleState)
               setWinnerTokenId(battleInfo.winnerTokenId)
             })
           }
@@ -311,17 +263,7 @@ export const ContractInteraction = () => {
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
-          ;(async () => {
-            const tx = await polygonContractWithSigner.addToBattleQueue(
-              battleAddressEmitted,
-              intervalTimeRef.current,
-              inPlayEmitted,
-              eliminatedTokenCountRef.current
-            )
-            setStartBattlePolyTx(tx.hash)
-            await tx.wait()
-            toastCompleted()
-          })().then((e) => {})
+          setInPlay(inPlayEmitted)
           setBattleState(1)
         }
       })
@@ -365,7 +307,7 @@ export const ContractInteraction = () => {
         ethereumContract.removeListener('BattleStarted')
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ethereumContract, polygonContract, polygonAbi, ethereumAbi])
 
   const toastInProgress = () => {
@@ -409,11 +351,24 @@ export const ContractInteraction = () => {
   const startBattle = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.startBattle()
-      setTxHashes({
-        ...txHashes,
-        startBattleEth: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.startBattle()
+      await tx.wait()
+      toastCompleted()
+    } else {
+      toastNotOwner()
+    }
+  }
+  const startBattlePolygon = async () => {
+    if (account === ownerPolygon) {
+      toastInProgress()
+      const tx = await polygonInjectedContract.addToBattleQueue(
+        battleAddress,
+        intervalTime,
+        inPlay,
+        eliminatedTokenCount
+      )
+      await tx.wait()
+      toastCompleted()
     } else {
       toastNotOwner()
     }
@@ -422,11 +377,7 @@ export const ContractInteraction = () => {
   const withdrawEthEthNet = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountEthNet)
-      setTxHashes({
-        ...txHashes,
-        withdrawEthEthNet: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.withdrawETH(values.erc20AmountEthNet)
       await tx.wait()
       toastCompleted()
     } else {
@@ -437,14 +388,10 @@ export const ContractInteraction = () => {
   const withdrawERC20EthNet = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.withdrawERC20Token(
+      const tx = await ethereumInjectedContract.withdrawERC20Token(
         values.erc20TokenAddressEthNet,
         values.erc20AmountEthNet
       )
-      setTxHashes({
-        ...txHashes,
-        withdrawErc20EthNet: tx.hash,
-      })
       await tx.wait()
       toastCompleted()
     } else {
@@ -455,11 +402,7 @@ export const ContractInteraction = () => {
   const withdrawEthPolyNet = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.withdrawETH(values.erc20AmountPolyNet)
-      setTxHashes({
-        ...txHashes,
-        withdrawEthPolyNet: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.withdrawETH(values.erc20AmountPolyNet)
       await tx.wait()
       toastCompleted()
     } else {
@@ -470,14 +413,10 @@ export const ContractInteraction = () => {
   const withdrawERC20PolyNet = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.withdrawERC20Token(
+      const tx = await ethereumInjectedContract.withdrawERC20Token(
         values.erc20TokenAddressPolyNet,
         values.erc20AmountPolyNet
       )
-      setTxHashes({
-        ...txHashes,
-        withdrawErc20PolyNet: tx.hash,
-      })
       await tx.wait()
       toastCompleted()
     } else {
@@ -488,11 +427,7 @@ export const ContractInteraction = () => {
   const updateNFTPrice = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.setPrice(ethers.utils.parseEther(values.price))
-      setTxHashes({
-        ...txHashes,
-        price: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.setPrice(ethers.utils.parseEther(values.price))
       await tx.wait()
       toastCompleted()
     } else {
@@ -503,11 +438,7 @@ export const ContractInteraction = () => {
   const endBattle = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.endBattle(winnerTokenId)
-      setTxHashes({
-        ...txHashes,
-        winnerTokenId: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.endBattle(winnerTokenId)
       await tx.wait()
       toastCompleted()
     } else {
@@ -518,11 +449,7 @@ export const ContractInteraction = () => {
   const updateBaseURI = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.setBaseURI(values.baseURI)
-      setTxHashes({
-        ...txHashes,
-        baseURI: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.setBaseURI(values.baseURI)
       await tx.wait()
       toastCompleted()
     } else {
@@ -533,11 +460,7 @@ export const ContractInteraction = () => {
   const updateDefaultTokenURI = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.setDefaultTokenURI(values.defaultTokenURI)
-      setTxHashes({
-        ...txHashes,
-        defaultTokenURI: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.setDefaultTokenURI(values.defaultTokenURI)
       await tx.wait()
       toastCompleted()
     } else {
@@ -548,11 +471,7 @@ export const ContractInteraction = () => {
   const updatePrizeTokenURI = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.setPrizeTokenURI(values.prizeTokenURI)
-      setTxHashes({
-        ...txHashes,
-        prizeTokenURI: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.setPrizeTokenURI(values.prizeTokenURI)
       await tx.wait()
       toastCompleted()
     } else {
@@ -563,11 +482,7 @@ export const ContractInteraction = () => {
   const updateMaxSupply = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.setMaxSupply(values.maxSupply)
-      setTxHashes({
-        ...txHashes,
-        maxSupply: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.setMaxSupply(values.maxSupply)
       await tx.wait()
       toastCompleted()
     } else {
@@ -578,11 +493,7 @@ export const ContractInteraction = () => {
   const updateUnitsPerTransaction = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.setUnitsPerTransaction(values.unitsPerTransaction)
-      setTxHashes({
-        ...txHashes,
-        unitsPerTransaction: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.setUnitsPerTransaction(values.unitsPerTransaction)
       await tx.wait()
       toastCompleted()
     } else {
@@ -593,13 +504,9 @@ export const ContractInteraction = () => {
   const updateDropTime = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.setStartingTime(
+      const tx = await ethereumInjectedContract.setStartingTime(
         Date.parse(new Date(dropDate)) / 1000
       )
-      setTxHashes({
-        ...txHashes,
-        dropTime: tx.hash,
-      })
       await tx.wait()
       toastCompleted()
     } else {
@@ -608,16 +515,9 @@ export const ContractInteraction = () => {
   }
 
   const updateIntervalTime = async () => {
-    if (account === owner) {
+    if (account === ownerPolygon) {
       toastInProgress()
-      const tx = await polygonContractWithSigner.setBattleIntervalTime(
-        queueId,
-        intervalTimeRef.current
-      )
-      setTxHashes({
-        ...txHashes,
-        intervalTime: tx.hash,
-      })
+      const tx = await polygonInjectedContract.setBattleIntervalTime(queueId, intervalTime)
       await tx.wait()
       toastCompleted()
     } else {
@@ -626,16 +526,12 @@ export const ContractInteraction = () => {
   }
 
   const updateEliminatedTokenCount = async () => {
-    if (account === owner) {
+    if (account === ownerPolygon) {
       toastInProgress()
-      const tx = await polygonContractWithSigner.setEliminatedTokenCount(
+      const tx = await polygonInjectedContract.setEliminatedTokenCount(
         queueId,
-        eliminatedTokenCountRef.current
+        eliminatedTokenCount
       )
-      setTxHashes({
-        ...txHashes,
-        eliminatedTokenCount: tx.hash,
-      })
       await tx.wait()
       toastCompleted()
     } else {
@@ -646,14 +542,10 @@ export const ContractInteraction = () => {
   const addDefaultToken = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.addTokenURI(
+      const tx = await ethereumInjectedContract.addTokenURI(
         values.defaultTokenURIRandom,
         values.defaultTokenCountRandom
       )
-      setTxHashes({
-        ...txHashes,
-        addDefaultTokenURI: tx.hash,
-      })
       await tx.wait()
       toastCompleted()
     } else {
@@ -664,11 +556,7 @@ export const ContractInteraction = () => {
   const removeDefaultToken = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.removeTokenURI(values.removableTokenIndex)
-      setTxHashes({
-        ...txHashes,
-        removeDefaultTokenURI: tx.hash,
-      })
+      const tx = await ethereumInjectedContract.removeTokenURI(values.removableTokenIndex)
       await tx.wait()
       toastCompleted()
     } else {
@@ -679,14 +567,10 @@ export const ContractInteraction = () => {
   const updateDefaultTokenCount = async () => {
     if (account === owner) {
       toastInProgress()
-      const tx = await ethereumContractWithSigner.updateTokenURICount(
+      const tx = await ethereumInjectedContract.updateTokenURICount(
         values.defaultTokenURIRandomUpdate,
         values.defaultTokenCountRandomUpdate
       )
-      setTxHashes({
-        ...txHashes,
-        updateDefaultTokenCount: tx.hash,
-      })
       await tx.wait()
       toastCompleted()
     } else {
@@ -700,121 +584,31 @@ export const ContractInteraction = () => {
       <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       <Grid container spacing={1}>
-        <Grid item xs={12}>
-          <Card>
-            <CardHeader
-              subheader="Queue ID must be defined in DB before starting"
-              title="Start Battle"
-              sx={{ py: 1 }}
-            />
-            <Divider />
-            <CardContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <TextField
-                    error={
-                      battleState === 0 && battleQueueLength !== parseInt(queueId) ? true : false
-                    }
-                    helperText={
-                      battleState === 0 &&
-                      battleQueueLength !== parseInt(queueId) &&
-                      `* Please update queue ID with ${battleQueueLength}`
-                    }
-                    fullWidth
-                    label="Queue ID"
-                    required
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    type="number"
-                    value={queueId}
-                    variant="outlined"
-                  />
-                </Grid>
-
-                <Grid item md={6} xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Interval Time"
-                    name="intervalTime"
-                    type="number"
-                    onChange={handleIntervalTimeChange}
-                    value={intervalTimeRef.current}
-                    variant="outlined"
-                    disabled={battleState !== 0 || battleState === null ? true : false}
-                  />
-                </Grid>
-                <Grid item md={6} xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Eliminated Token Count"
-                    name="eliminatedTokenCount"
-                    type="number"
-                    onChange={handleEliminatedTokenCountChange}
-                    value={eliminatedTokenCountRef.current}
-                    variant="outlined"
-                    disabled={battleState !== 0 || battleState === null ? true : false}
-                  />
-                </Grid>
-              </Grid>
-            </CardContent>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-start',
-                  p: 2,
-                }}
-              >
-                <Button
-                  color="primary"
-                  variant="contained"
-                  onClick={startBattle}
-                  disabled={battleState !== 0 || battleState === null ? true : false}
-                >
-                  Start
-                </Button>
-              </Box>
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'flex-end',
-                  p: 2,
-                }}
-              >
-                {txHashes.startBattleEth && (
-                  <Link
-                    href={`https://${ethNetwork}etherscan.io/tx/${txHashes.startBattleEth}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{ mr: 5 }}
-                  >
-                    Ethereum: {displayAddress(txHashes.startBattleEth)}
-                  </Link>
-                )}
-                {startBattlePolyTx && (
-                  <Link
-                    href={`https://${polyNetwork}polygonscan.com/tx/${startBattlePolyTx}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Polygon: {displayAddress(startBattlePolyTx)}
-                  </Link>
-                )}
-              </Box>
-            </Box>
-          </Card>
-        </Grid>
-
         <Grid item md={6}>
           <Card>
             <CardHeader title="Ethereum Contract Functionalities" />
+          </Card>
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Start Battle" sx={{ py: 1 }} />
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={startBattle}
+                disabled={battleState !== 0 || battleState === null ? true : false}
+              >
+                Start
+              </Button>
+            </Box>
           </Card>
 
           <Box sx={{ py: 1 }} />
@@ -1323,6 +1117,92 @@ export const ContractInteraction = () => {
           <Box sx={{ py: 1 }} />
 
           <Card>
+            <CardHeader
+              subheader="Queue ID must be defined in DB before starting"
+              title="Start Battle"
+              sx={{ py: 1 }}
+            />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    error={
+                      battleState === 1 && !isBattleEnded && battleQueueLength !== parseInt(queueId)
+                        ? true
+                        : false
+                    }
+                    helperText={
+                      battleState === 1 &&
+                      !isBattleEnded &&
+                      battleQueueLength !== parseInt(queueId) &&
+                      `* Please update queue ID with ${battleQueueLength}`
+                    }
+                    fullWidth
+                    label="Queue ID"
+                    required
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    type="number"
+                    value={queueId}
+                    variant="outlined"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Interval Time"
+                    name="intervalTime"
+                    type="number"
+                    onChange={handleIntervalTimeChange}
+                    value={intervalTime}
+                    variant="outlined"
+                    disabled={
+                      (battleState !== 1 || battleState === null) && !isBattleEnded ? true : false
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Eliminated Token Count"
+                    name="eliminatedTokenCount"
+                    type="number"
+                    onChange={handleEliminatedTokenCountChange}
+                    value={eliminatedTokenCount}
+                    variant="outlined"
+                    disabled={
+                      (battleState !== 1 || battleState === null) && !isBattleEnded ? true : false
+                    }
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={startBattlePolygon}
+                disabled={
+                  (battleState !== 1 || battleState === null) && !isBattleEnded ? true : false
+                }
+              >
+                Start
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
             <CardHeader title="Queue ID" sx={{ py: 1 }} />
             <Divider />
             <CardContent>
@@ -1358,7 +1238,7 @@ export const ContractInteraction = () => {
                 name="intervalTime"
                 type="number"
                 onChange={handleIntervalTimeChange}
-                value={intervalTimeRef.current}
+                value={intervalTime}
                 variant="outlined"
                 disabled={battleState === 1 ? false : true}
               />
@@ -1394,7 +1274,7 @@ export const ContractInteraction = () => {
                 name="eliminatedTokenCount"
                 type="number"
                 onChange={handleEliminatedTokenCountChange}
-                value={eliminatedTokenCountRef.current}
+                value={eliminatedTokenCount}
                 variant="outlined"
                 disabled={battleState === 1 ? false : true}
               />

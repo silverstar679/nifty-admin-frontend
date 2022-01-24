@@ -21,7 +21,7 @@ import DateTimePicker from '@mui/lab/DateTimePicker'
 import { createDrop } from 'src/services/apis'
 import { TransactionInfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
-import { useEthereumWeb3React } from '../../hooks'
+import { useWeb3React } from '../../hooks'
 import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
@@ -56,7 +56,7 @@ const types = [
 ]
 
 export const DropCreate = (props) => {
-  const { active, account, chainId } = useEthereumWeb3React()
+  const { active, account, chainId } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
@@ -238,7 +238,10 @@ export const DropCreate = (props) => {
   }
 
   const handleCreateDrop = async () => {
-    if (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT) {
+    if (
+      account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
+      account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT
+    ) {
       const data = {
         name: values.name,
         address: values.address,
