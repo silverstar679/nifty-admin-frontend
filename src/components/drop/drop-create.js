@@ -19,7 +19,7 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
 import { createDrop } from 'src/services/apis'
-import { TransactionInfoToast } from '../Toast'
+import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
 import { getAllDrops } from '../../services/apis'
@@ -278,7 +278,7 @@ export const DropCreate = (props) => {
 
   return (
     <>
-      <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
+      <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       <form autoComplete="off" noValidate {...props}>
         <Card>

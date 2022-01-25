@@ -12,7 +12,7 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
 import _ from 'lodash'
-import { TransactionInfoToast } from '../Toast'
+import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
@@ -581,7 +581,7 @@ export const ContractInteraction = () => {
   if (battleQueueLength === null) return null
   return (
     <>
-      <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
+      <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       <Grid container spacing={1}>
         <Grid item md={6}>

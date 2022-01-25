@@ -4,7 +4,7 @@ import { styled } from '@mui/material/styles'
 import { DashboardNavbar } from './dashboard-navbar'
 import { DashboardSidebar } from './dashboard-sidebar'
 import { useWeb3React } from '@web3-react/core'
-import { TransactionInfoToast } from './Toast'
+import { InfoToast } from './Toast'
 import { MESSAGE, SEVERITY } from '../constants/toast'
 
 const DashboardLayoutRoot = styled('div')(({ theme }) => ({
@@ -64,7 +64,7 @@ export const DashboardLayout = (props) => {
 
   return (
     <>
-      <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
+      <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       {active &&
         (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||

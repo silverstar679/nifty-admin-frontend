@@ -19,7 +19,7 @@ import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
 import { updateDrop } from 'src/services/apis'
-import { TransactionInfoToast } from '../Toast'
+import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
@@ -282,7 +282,7 @@ export const DropDetailUpdate = () => {
 
   return (
     <>
-      <TransactionInfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
+      <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
       <form autoComplete="off">
         <Card>
           <CardHeader subheader="The information can be edited" title="Drop Details" />
