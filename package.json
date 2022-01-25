@@ -6,7 +6,8 @@
   "private": false,
   "scripts": {
     "dev": "next",
-    "build": "next build && next export",
+    "build": "next build",
+    "export": "next export",
     "start": "next start",
     "lint": "next lint",
     "lint-fix": "next lint --fix"
