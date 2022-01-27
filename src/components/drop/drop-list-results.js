@@ -48,7 +48,7 @@ export const DropListResults = () => {
   const [limit, setLimit] = useState(10)
   const [page, setPage] = useState(0)
   const [openDialog, setOpenDialog] = useState(false)
-  // const [selectedId, setSelectedId] = useState('')
+  const [selectedId, setSelectedId] = useState(null)
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
@@ -83,23 +83,32 @@ export const DropListResults = () => {
     setIsToast(false)
   }
 
-  const handleDeleteDrop = async (id) => {
+  const handleDeleteDrop = async () => {
     if (
       account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
       account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT
     ) {
-      setIsToast(false)
-
-      const deletedDrop = await deleteDrop(id)
-
-      const filteredDrops = _.filter(drops, function (o) {
-        return o._id !== id
-      })
-      setDrops(filteredDrops)
-
       setOpenDialog(false)
+
+      setIsToast(false)
       setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETED })
+      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETING })
+      const deletedDrop = await deleteDrop(selectedId)
+      console.log(deletedDrop)
+      if (!!deletedDrop) {
+        const filteredDrops = _.filter(drops, function (o) {
+          return o._id !== selectedId
+        })
+        setDrops(filteredDrops)
+
+        setIsToast(false)
+        setIsToast(true)
+        setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETED })
+      } else {
+        setIsToast(false)
+        setIsToast(true)
+        setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.FAILED })
+      }
     } else {
       setIsToast(false)
       setIsToast(true)
@@ -171,8 +180,8 @@ export const DropListResults = () => {
                       >
                         <NextLink
                           href={{
-                            pathname: '/drops/[address]',
-                            query: { address: drop.address },
+                            pathname: '/drops/[id]',
+                            query: { id: drop._id },
                           }}
                         >
                           <IconButton size="small">
@@ -180,7 +189,7 @@ export const DropListResults = () => {
                           </IconButton>
                         </NextLink>
 
-                        <IconButton size="small" onClick={() => handleDeleteDrop(drop._id)}>
+                        <IconButton size="small" onClick={() => handleClickOpen(drop._id)}>
                           <DeleteForeverIcon fontSize="small" color="error" />
                         </IconButton>
                       </Box>
@@ -201,7 +210,7 @@ export const DropListResults = () => {
           rowsPerPageOptions={[5, 10, 25]}
         />
       </Card>
-      {/* <Dialog
+      <Dialog
         open={openDialog}
         onClose={handleDialogClose}
         aria-labelledby="alert-dialog-title"
@@ -219,7 +228,7 @@ export const DropListResults = () => {
             Ok
           </Button>
         </DialogActions>
-      </Dialog> */}
+      </Dialog>
     </>
   )
 }

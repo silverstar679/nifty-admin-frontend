@@ -289,6 +289,36 @@ export const DropCreate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
+                  label="Drop Name"
+                  name="name"
+                  onChange={handleInputChange}
+                  value={values.name}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Creator Name"
+                  name="creator"
+                  onChange={handleInputChange}
+                  value={values.creator}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Artist Name"
+                  name="artist"
+                  onChange={handleInputChange}
+                  value={values.artist}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
                   label="Ethereum Contract Address"
                   name="address"
                   onChange={handleInputChange}
@@ -303,6 +333,16 @@ export const DropCreate = (props) => {
                   name="polygonContractAddress"
                   onChange={handleInputChange}
                   value={values.polygonContractAddress}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Queue ID"
+                  name="queueId"
+                  onChange={handleInputChange}
+                  value={values.queueId}
                   variant="outlined"
                 />
               </Grid>

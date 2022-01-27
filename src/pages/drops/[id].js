@@ -7,7 +7,7 @@ import _ from 'lodash'
 
 const DropListDetail = () => {
   const router = useRouter()
-  const address = router.query.address
+  const id = router.query.id
 
   return (
     <>
@@ -23,7 +23,7 @@ const DropListDetail = () => {
       >
         <Container maxWidth={false}>
           <Box sx={{ mt: 3 }}>
-            <DropDetail address={address} />
+            <DropDetail id={id} />
           </Box>
         </Container>
       </Box>

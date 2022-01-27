@@ -25,19 +25,6 @@ import { useWeb3React } from '../../hooks'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
-import { getAllDrops } from '../../services/apis'
-import { useRouter } from 'next/router'
-
-const networks = [
-  {
-    value: 'mainnet',
-    label: 'Mainnet',
-  },
-  {
-    value: 'rinkeby',
-    label: 'Rinkeby',
-  },
-]
 
 const types = [
   {
@@ -58,86 +45,42 @@ const types = [
   },
 ]
 
-export const DropDetailUpdate = () => {
+export const DropDetailUpdate = (props) => {
   const { active, account, chainId } = useWeb3React()
-  const router = useRouter()
-  const { address } = router.query
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
-    name: '',
-    artist: '',
-    creator: '',
-    address: address,
-    type: '',
-    polygonContractAddress: '',
-    queueId: '',
-    defaultMetadata: '',
-    prizeMetadata: '',
-    defaultNFTUri: '',
-    description: '',
-    threshold: '',
-    previewMedia: '',
-    created_at: '',
+    name: props.drop.name,
+    artist: props.drop.artist,
+    creator: props.drop.creator,
+    address: props.drop.address,
+    type: props.drop.type,
+    polygonContractAddress: props.drop.polygonContractAddress,
+    queueId: props.drop.queueId,
+    defaultMetadata: props.drop.defaultMetadata,
+    prizeMetadata: props.drop.prizeMetadata,
+    defaultNFTUri: props.drop.defaultNFTUri,
+    description: props.drop.description,
+    threshold: props.drop.threshold,
+    previewMedia: props.drop.previewMedia,
+    created_at: props.drop.created_at,
   })
 
   const [checkboxValues, setCheckboxValues] = useState({
-    isDropEnded: false,
-    isBattleEnded: false,
-    isDefaultNFTImage: false,
-    isFutureDrop: false,
+    isDropEnded: props.drop.isDropEnded,
+    isBattleEnded: props.drop.isBattleEnded,
+    isDefaultNFTImage: props.drop.isDefaultNFTImage,
+    isFutureDrop: props.drop.isFutureDrop,
   })
 
-  const [dropDate, setDropDate] = useState(new Date(Date.now()))
-  const [battleDate, setBattleDate] = useState(new Date(Date.now()))
-
-  const [drop, setDrop] = useState(null)
-  useEffect(() => {
-    let mounted = true
-    async function getDrops() {
-      const drops = await getAllDrops()
-      const drop = _.find(drops, { address: address })
-      if (mounted) {
-        setDrop(drop)
-        setValues({
-          name: drop.name,
-          artist: drop.artist,
-          creator: drop.creator,
-          address: address,
-          type: drop.type,
-          polygonContractAddress: drop.polygonContractAddress,
-          queueId: drop.queueId,
-          defaultMetadata: drop.defaultMetadata,
-          prizeMetadata: drop.prizeMetadata,
-          defaultNFTUri: drop.defaultNFTUri,
-          description: drop.description,
-          threshold: drop.threshold,
-          previewMedia: drop.previewMedia,
-          created_at: drop.created_at,
-        })
-        setCheckboxValues({
-          isDropEnded: drop.isDropEnded,
-          isBattleEnded: drop.isBattleEnded,
-          isDefaultNFTImage: drop.isDefaultNFTImage,
-          isFutureDrop: drop.isFutureDrop,
-        })
-        setDropDate(drop.dropDate)
-        setBattleDate(drop.battleDate)
-      }
-    }
-    getDrops()
-    return () => {
-      mounted = false
-    }
-  }, [address])
+  const [dropDate, setDropDate] = useState(props.drop.dropDate)
+  const [battleDate, setBattleDate] = useState(props.drop.battleDate)
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
-
-  const [recommendedQueueId, setRecommendedQueueId] = useState(null)
 
   useEffect(() => {
     let mounted = true
@@ -181,14 +124,11 @@ export const DropDetailUpdate = () => {
     let mounted = true
 
     async function getQueueId() {
-      Promise.all([polygonContract.battleQueueLength(), ethereumContract.battleState()]).then(
-        ([queueId, battleState]) => {
-          if (mounted) {
-            setRecommendedQueueId(parseInt(queueId, 10))
-            setBattleState(battleState)
-          }
+      Promise.all([ethereumContract.battleState()]).then(([battleState]) => {
+        if (mounted) {
+          setBattleState(battleState)
         }
-      )
+      })
     }
     if (
       ethereumContract &&
@@ -278,8 +218,6 @@ export const DropDetailUpdate = () => {
     }
   }
 
-  if (recommendedQueueId === null) return null
-
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -328,21 +266,11 @@ export const DropDetailUpdate = () => {
               </Grid>
               <Grid item md={6} xs={12}>
                 <TextField
-                  error={
-                    battleState === 0 && recommendedQueueId !== parseInt(values.queueId)
-                      ? true
-                      : false
-                  }
                   fullWidth
                   label="Queue ID for polygon contract"
                   name="queueId"
                   onChange={handleInputChange}
                   value={values.queueId}
-                  helperText={
-                    battleState === 0 &&
-                    recommendedQueueId !== parseInt(values.queueId) &&
-                    `* Please update queue ID with ${recommendedQueueId}`
-                  }
                   variant="outlined"
                 />
               </Grid>

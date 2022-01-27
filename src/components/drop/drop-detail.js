@@ -11,16 +11,16 @@ import _ from 'lodash'
 export const DropDetail = (props) => {
   const [value, setValue] = useState('1')
   const [drop, setDrop] = useState(null)
-  const address = props.address
+  const id = props.id
 
   useEffect(() => {
     async function getDrops() {
       const drops = await getAllDrops()
-      const selectedDrop = _.find(drops, { address: address })
+      const selectedDrop = _.find(drops, { _id: id })
       setDrop(selectedDrop)
     }
     getDrops()
-  }, [address])
+  }, [id])
 
   const handleChange = (event, newValue) => {
     setValue(newValue)
@@ -34,15 +34,17 @@ export const DropDetail = (props) => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList onChange={handleChange} aria-label="Drop Detail Tabs">
             <Tab label="Drop Detail Update" value="1" />
-            {drop && drop.type !== 'old' && <Tab label="Contract Interaction" value="2" />}
+            {drop && drop.address !== '' && drop.type !== 'old' && (
+              <Tab label="Contract Interaction" value="2" />
+            )}
           </TabList>
         </Box>
         <TabPanel value="1">
-          <DropDetailUpdate />
+          <DropDetailUpdate drop={drop} />
         </TabPanel>
-        {drop && drop.type !== 'old' && (
+        {drop && drop.address !== '' && drop.type !== 'old' && (
           <TabPanel value="2">
-            <ContractInteraction />
+            <ContractInteraction drop={drop} />
           </TabPanel>
         )}
       </TabContext>

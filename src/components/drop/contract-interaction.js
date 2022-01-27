@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
@@ -17,38 +17,13 @@ import { MESSAGE, SEVERITY } from '../../constants/toast'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
 import LocalizationProvider from '@mui/lab/LocalizationProvider'
 import DateTimePicker from '@mui/lab/DateTimePicker'
-import { getAllDrops } from '../../services/apis'
-import { useRouter } from 'next/router'
 
-export const ContractInteraction = () => {
-  const ethNetwork =
-    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? '' : 'rinkeby.'
-  const polyNetwork =
-    process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? '' : 'mumbai.'
-  const router = useRouter()
-  const { address } = router.query
-  const battleAddress = address
+export const ContractInteraction = (props) => {
+  const battleAddress = props.drop.address
 
-  const [drop, setDrop] = useState(null)
-
-  useEffect(() => {
-    let mounted = true
-    async function getDrops() {
-      const drops = await getAllDrops()
-      const drop = _.find(drops, { address: address })
-      if (mounted) {
-        setDrop(drop)
-      }
-    }
-    getDrops()
-    return () => {
-      mounted = false
-    }
-  }, [address])
-
-  const polygonContractAddress = drop && drop.polygonContractAddress
-  const queueId = drop && drop.queueId
-  const type = drop && drop.type
+  const polygonContractAddress = props.drop && props.drop.polygonContractAddress
+  const queueId = props.drop && props.drop.queueId
+  const type = props.drop && props.drop.type
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
   const { active, account, chainId } = useWeb3React()
@@ -89,7 +64,6 @@ export const ContractInteraction = () => {
 
   const [intervalTime, setIntervalTime] = useState(0)
   const [eliminatedTokenCount, setEliminatedTokenCount] = useState(0)
-  const [battleQueueLength, setBattleQueueLength] = useState(null)
 
   const handleClose = () => {
     setIsToast(false)
@@ -149,7 +123,6 @@ export const ContractInteraction = () => {
       mounted = false
     }
   }, [polygonContractAddress])
-
   const ethereumContract = useEthereumNetworkContract(battleAddress, ethereumAbi, true)
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
   const ethereumInjectedContract = useEthereumContract(battleAddress, ethereumAbi, true)
@@ -185,7 +158,6 @@ export const ContractInteraction = () => {
         ethereumContract.unitsPerTransaction(),
         ethereumContract.owner(),
         polygonContract.owner(),
-        polygonContract.battleQueueLength(),
       ]).then(
         ([
           battleState,
@@ -197,14 +169,12 @@ export const ContractInteraction = () => {
           unitsPerTransaction,
           owner,
           ownerPolygon,
-          battleQueueLength,
         ]) => {
           setOwner(owner)
           setOwnerPolygon(ownerPolygon)
           setBattleState(parseInt(battleState, 10))
-          setBattleQueueLength(parseInt(battleQueueLength, 10))
           if (parseInt(battleState, 10) !== 0 && queueId) {
-            Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
+            Promise.all([polygonContract.battleQueue(parseInt(queueId))]).then(([battleInfo]) => {
               setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
               setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
               setIsBattleEnded(battleInfo.battleState)
@@ -517,7 +487,10 @@ export const ContractInteraction = () => {
   const updateIntervalTime = async () => {
     if (account === ownerPolygon) {
       toastInProgress()
-      const tx = await polygonInjectedContract.setBattleIntervalTime(queueId, intervalTime)
+      const tx = await polygonInjectedContract.setBattleIntervalTime(
+        parseInt(queueId),
+        intervalTime
+      )
       await tx.wait()
       toastCompleted()
     } else {
@@ -529,7 +502,7 @@ export const ContractInteraction = () => {
     if (account === ownerPolygon) {
       toastInProgress()
       const tx = await polygonInjectedContract.setEliminatedTokenCount(
-        queueId,
+        parseInt(queueId),
         eliminatedTokenCount
       )
       await tx.wait()
@@ -578,7 +551,6 @@ export const ContractInteraction = () => {
     }
   }
 
-  if (battleQueueLength === null) return null
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -1115,41 +1087,20 @@ export const ContractInteraction = () => {
           </Card>
 
           <Box sx={{ py: 1 }} />
+          <Card>
+            <CardHeader title="Queue ID" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField fullWidth label="Queue ID" value={queueId} variant="outlined" />
+            </CardContent>
+          </Card>
+          <Box sx={{ py: 1 }} />
 
           <Card>
-            <CardHeader
-              subheader="Queue ID must be defined in DB before starting"
-              title="Start Battle"
-              sx={{ py: 1 }}
-            />
+            <CardHeader title="Start Battle" sx={{ py: 1 }} />
             <Divider />
             <CardContent>
               <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <TextField
-                    error={
-                      battleState === 1 && !isBattleEnded && battleQueueLength !== parseInt(queueId)
-                        ? true
-                        : false
-                    }
-                    helperText={
-                      battleState === 1 &&
-                      !isBattleEnded &&
-                      battleQueueLength !== parseInt(queueId) &&
-                      `* Please update queue ID with ${battleQueueLength}`
-                    }
-                    fullWidth
-                    label="Queue ID"
-                    required
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    type="number"
-                    value={queueId}
-                    variant="outlined"
-                  />
-                </Grid>
-
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -1159,9 +1110,7 @@ export const ContractInteraction = () => {
                     onChange={handleIntervalTimeChange}
                     value={intervalTime}
                     variant="outlined"
-                    disabled={
-                      (battleState !== 1 || battleState === null) && !isBattleEnded ? true : false
-                    }
+                    disabled={battleState === 1 && isBattleEnded ? false : true}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1173,9 +1122,7 @@ export const ContractInteraction = () => {
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCount}
                     variant="outlined"
-                    disabled={
-                      (battleState !== 1 || battleState === null) && !isBattleEnded ? true : false
-                    }
+                    disabled={battleState === 1 && isBattleEnded ? false : true}
                   />
                 </Grid>
               </Grid>
@@ -1191,9 +1138,7 @@ export const ContractInteraction = () => {
                 color="primary"
                 variant="contained"
                 onClick={startBattlePolygon}
-                disabled={
-                  (battleState !== 1 || battleState === null) && !isBattleEnded ? true : false
-                }
+                disabled={battleState === 1 && isBattleEnded ? false : true}
               >
                 Start
               </Button>
@@ -1201,30 +1146,6 @@ export const ContractInteraction = () => {
           </Card>
 
           <Box sx={{ py: 1 }} />
-
-          <Card>
-            <CardHeader title="Queue ID" sx={{ py: 1 }} />
-            <Divider />
-            <CardContent>
-              <TextField
-                error={battleState === 0 && battleQueueLength !== parseInt(queueId) ? true : false}
-                helperText={
-                  battleState === 0 &&
-                  battleQueueLength !== parseInt(queueId) &&
-                  `* Please update queue ID with ${battleQueueLength}`
-                }
-                fullWidth
-                label="Queue ID"
-                required
-                type="number"
-                InputProps={{
-                  readOnly: true,
-                }}
-                value={queueId}
-                variant="outlined"
-              />
-            </CardContent>
-          </Card>
 
           <Box sx={{ py: 1 }} />
 
