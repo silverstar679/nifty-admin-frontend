@@ -1114,14 +1114,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleIntervalTimeChange}
                     value={intervalTime}
                     variant="outlined"
-                    disabled={
-                      (battleState === 1 &&
-                        !isBattleEnded &&
-                        new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
-                      !isBattleAdded
-                        ? false
-                        : true
-                    }
+                    disabled={battleState === 1 ? false : true}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1133,14 +1126,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCount}
                     variant="outlined"
-                    disabled={
-                      (battleState === 1 &&
-                        !isBattleEnded &&
-                        new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
-                      !isBattleAdded
-                        ? false
-                        : true
-                    }
+                    disabled={battleState === 1 ? false : true}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1151,14 +1137,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleInPlayChange}
                     value={inPlay}
                     variant="outlined"
-                    disabled={
-                      (battleState === 1 &&
-                        !isBattleEnded &&
-                        new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
-                      !isBattleAdded
-                        ? false
-                        : true
-                    }
+                    disabled={battleState === 1 ? false : true}
                   />
                 </Grid>
               </Grid>
@@ -1174,14 +1153,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={startBattlePolygon}
-                disabled={
-                  (battleState === 1 &&
-                    !isBattleEnded &&
-                    new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
-                  !isBattleAdded
-                    ? false
-                    : true
-                }
+                disabled={battleState === 1 ? false : true}
               >
                 Start
               </Button>
