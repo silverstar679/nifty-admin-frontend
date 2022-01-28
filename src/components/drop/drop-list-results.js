@@ -168,7 +168,11 @@ export const DropListResults = () => {
                       {drop.isDropEnded ? 'Done' : drop.dropDate <= Date.now() ? 'Started' : 'New'}
                     </TableCell>
                     <TableCell>
-                      {drop.isBattleEnded ? 'Done' : drop.isDropEnded ? 'Started' : 'New'}
+                      {drop.isBattleEnded
+                        ? 'Done'
+                        : drop.battleDate <= Date.now()
+                        ? 'Started'
+                        : 'New'}
                     </TableCell>
                     <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
                     <TableCell>
