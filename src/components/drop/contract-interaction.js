@@ -1114,7 +1114,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleIntervalTimeChange}
                     value={intervalTime}
                     variant="outlined"
-                    disabled={battleState === 2 ? true : false}
+                    disabled={battleState === 2 || isBattleAdded ? true : false}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1126,7 +1126,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCount}
                     variant="outlined"
-                    disabled={battleState === 2 ? true : false}
+                    disabled={battleState === 2 || isBattleAdded ? true : false}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1137,7 +1137,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleInPlayChange}
                     value={inPlay}
                     variant="outlined"
-                    disabled={battleState === 2 ? true : false}
+                    disabled={battleState === 2 || isBattleAdded ? true : false}
                   />
                 </Grid>
               </Grid>
@@ -1153,7 +1153,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={startBattlePolygon}
-                disabled={battleState === 2 ? true : false}
+                disabled={battleState === 2 || isBattleAdded ? true : false}
               >
                 Start
               </Button>
