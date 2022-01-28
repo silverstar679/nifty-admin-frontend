@@ -22,7 +22,7 @@ export const ContractInteraction = (props) => {
   const battleAddress = props.drop.address
 
   const polygonContractAddress = props.drop && props.drop.polygonContractAddress
-  const queueId = props.drop && props.drop.queueId
+  const queueId = props.drop && parseInt(props.drop.queueId, 10)
   const type = props.drop && props.drop.type
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
@@ -173,8 +173,12 @@ export const ContractInteraction = (props) => {
           setOwner(owner)
           setOwnerPolygon(ownerPolygon)
           setBattleState(parseInt(battleState, 10))
-          if (parseInt(battleState, 10) !== 0 && queueId) {
-            Promise.all([polygonContract.battleQueue(parseInt(queueId))]).then(([battleInfo]) => {
+          if (
+            parseInt(battleState, 10) !== 0 &&
+            queueId &&
+            new Date(props.drop.battleDate) < new Date(Date.now() + 100000)
+          ) {
+            Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
               setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
               setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
               setIsBattleEnded(battleInfo.battleState)
@@ -487,10 +491,7 @@ export const ContractInteraction = (props) => {
   const updateIntervalTime = async () => {
     if (account === ownerPolygon) {
       toastInProgress()
-      const tx = await polygonInjectedContract.setBattleIntervalTime(
-        parseInt(queueId),
-        intervalTime
-      )
+      const tx = await polygonInjectedContract.setBattleIntervalTime(queueId, intervalTime)
       await tx.wait()
       toastCompleted()
     } else {
@@ -502,7 +503,7 @@ export const ContractInteraction = (props) => {
     if (account === ownerPolygon) {
       toastInProgress()
       const tx = await polygonInjectedContract.setEliminatedTokenCount(
-        parseInt(queueId),
+        queueId,
         eliminatedTokenCount
       )
       await tx.wait()
@@ -1110,7 +1111,14 @@ export const ContractInteraction = (props) => {
                     onChange={handleIntervalTimeChange}
                     value={intervalTime}
                     variant="outlined"
-                    disabled={battleState === 1 && isBattleEnded ? false : true}
+                    disabled={
+                      (battleState === 1 &&
+                        !isBattleEnded &&
+                        new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
+                      !isBattleAdded
+                        ? false
+                        : true
+                    }
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1122,7 +1130,14 @@ export const ContractInteraction = (props) => {
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCount}
                     variant="outlined"
-                    disabled={battleState === 1 && isBattleEnded ? false : true}
+                    disabled={
+                      (battleState === 1 &&
+                        !isBattleEnded &&
+                        new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
+                      !isBattleAdded
+                        ? false
+                        : true
+                    }
                   />
                 </Grid>
               </Grid>
@@ -1138,7 +1153,14 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={startBattlePolygon}
-                disabled={battleState === 1 && isBattleEnded ? false : true}
+                disabled={
+                  (battleState === 1 &&
+                    !isBattleEnded &&
+                    new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
+                  !isBattleAdded
+                    ? false
+                    : true
+                }
               >
                 Start
               </Button>

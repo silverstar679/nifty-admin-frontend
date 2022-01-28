@@ -165,12 +165,16 @@ export const DropListResults = () => {
                     <TableCell>{NETWORKS[drop.network]}</TableCell>
                     <TableCell>{TYPES[drop.type]}</TableCell>
                     <TableCell>
-                      {drop.isDropEnded ? 'Done' : drop.dropDate <= Date.now() ? 'Started' : 'New'}
+                      {drop.isDropEnded
+                        ? 'Done'
+                        : new Date(drop.dropDate) <= new Date(Date.now())
+                        ? 'Started'
+                        : 'New'}
                     </TableCell>
                     <TableCell>
                       {drop.isBattleEnded
                         ? 'Done'
-                        : drop.battleDate <= Date.now()
+                        : new Date(drop.battleDate) <= new Date(Date.now())
                         ? 'Started'
                         : 'New'}
                     </TableCell>
