@@ -207,7 +207,7 @@ export const DropDetailUpdate = (props) => {
         battleDate,
       }
       toastInProgress()
-      const updatedDrop = await updateDrop(drop._id, data)
+      const updatedDrop = await updateDrop(props.drop._id, data)
       setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_UPDATED })
