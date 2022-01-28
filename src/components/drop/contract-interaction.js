@@ -36,7 +36,7 @@ export const ContractInteraction = (props) => {
   const [isBattleAdded, setIsBattleAdded] = useState(false)
   const [isBattleEnded, setIsBattleEnded] = useState(false)
   const [defaultTokenInfo, setDefaultTokenInfo] = useState([])
-  const [inPlay, setInPlay] = useState([])
+  const [inPlay, setInPlay] = useState('')
 
   const [dropDate, setDropDate] = useState(new Date(Date.now()).toISOString())
   const [winnerTokenId, setWinnerTokenId] = useState(0)
@@ -76,6 +76,9 @@ export const ContractInteraction = (props) => {
   }
   const handleWinnerTokenIdChange = (event) => {
     setWinnerTokenId(event.target.value)
+  }
+  const handleInPlayChange = (event) => {
+    setInPlay(event.target.value)
   }
 
   const handleIntervalTimeChange = (event) => {
@@ -237,7 +240,7 @@ export const ContractInteraction = (props) => {
 
       ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
         if (battleAddress === battleAddressEmitted) {
-          setInPlay(inPlayEmitted)
+          setInPlay(inPlayEmitted.join(','))
           setBattleState(1)
         }
       })
@@ -338,7 +341,7 @@ export const ContractInteraction = (props) => {
       const tx = await polygonInjectedContract.addToBattleQueue(
         battleAddress,
         intervalTime,
-        inPlay,
+        inPlay.split(','),
         eliminatedTokenCount
       )
       await tx.wait()
@@ -1129,6 +1132,24 @@ export const ContractInteraction = (props) => {
                     type="number"
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCount}
+                    variant="outlined"
+                    disabled={
+                      (battleState === 1 &&
+                        !isBattleEnded &&
+                        new Date(props.drop.battleDate) > new Date(Date.now() + 100000)) ||
+                      !isBattleAdded
+                        ? false
+                        : true
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Token IDs"
+                    name="inPlay"
+                    onChange={handleInPlayChange}
+                    value={inPlay}
                     variant="outlined"
                     disabled={
                       (battleState === 1 &&

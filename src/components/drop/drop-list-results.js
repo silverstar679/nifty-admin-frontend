@@ -94,7 +94,6 @@ export const DropListResults = () => {
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETING })
       const deletedDrop = await deleteDrop(selectedId)
-      console.log(deletedDrop)
       if (!!deletedDrop) {
         const filteredDrops = _.filter(drops, function (o) {
           return o._id !== selectedId
