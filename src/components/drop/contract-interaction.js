@@ -1114,7 +1114,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleIntervalTimeChange}
                     value={intervalTime}
                     variant="outlined"
-                    disabled={battleState === 1 ? false : true}
+                    disabled={battleState === 2 ? true : false}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1126,7 +1126,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCount}
                     variant="outlined"
-                    disabled={battleState === 1 ? false : true}
+                    disabled={battleState === 2 ? true : false}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1137,7 +1137,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleInPlayChange}
                     value={inPlay}
                     variant="outlined"
-                    disabled={battleState === 1 ? false : true}
+                    disabled={battleState === 2 ? true : false}
                   />
                 </Grid>
               </Grid>
@@ -1153,7 +1153,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={startBattlePolygon}
-                disabled={battleState === 1 ? false : true}
+                disabled={battleState === 2 ? true : false}
               >
                 Start
               </Button>
@@ -1176,7 +1176,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleIntervalTimeChange}
                 value={intervalTime}
                 variant="outlined"
-                disabled={battleState === 1 ? false : true}
+                disabled={battleState === 2 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1191,7 +1191,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={updateIntervalTime}
-                disabled={battleState === 1 ? false : true}
+                disabled={battleState === 2 ? true : false}
               >
                 Update
               </Button>
@@ -1212,7 +1212,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleEliminatedTokenCountChange}
                 value={eliminatedTokenCount}
                 variant="outlined"
-                disabled={battleState === 1 ? false : true}
+                disabled={battleState === 2 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1227,7 +1227,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={updateEliminatedTokenCount}
-                disabled={battleState === 1 ? false : true}
+                disabled={battleState === 2 ? true : false}
               >
                 Update
               </Button>
