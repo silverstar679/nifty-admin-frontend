@@ -3,6 +3,22 @@
   "rules": {
     "@next/next/no-img-element": "off",
     "jsx-a11y/alt-text": "off",
-    "react/display-name": "off"
+    "react/display-name": "off",
+    "no-unused-vars": 1,
+    "no-undefined": "warn",
+    "no-undef-init": "warn",
+    "no-undef": "warn"
+  },
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 12,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true,
+      "modules": true
+    }
   }
 }

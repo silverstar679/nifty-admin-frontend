@@ -22,41 +22,32 @@ import { createDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
-import { getAllDrops } from '../../services/apis'
-import _ from 'lodash'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 
-const networks = [
-  {
-    value: 'mainnet',
-    label: 'Mainnet',
-  },
-  {
-    value: 'rinkeby',
-    label: 'Rinkeby',
-  },
-]
-
 const types = [
   {
     value: 'replace',
-    label: 'BattleRoyale',
+    label: 'Battle Royale',
+  },
+  {
+    value: 'noPrize',
+    label: 'Battle Royale No Prize',
   },
   {
     value: 'mint',
-    label: 'BattleRoyaleMintingNew',
+    label: 'Battle Royale Minting New',
   },
   {
     value: 'random',
-    label: 'BattleRoyaleRandomPart',
+    label: 'Battle Royale Random Part',
   },
 ]
 
 export const DropCreate = (props) => {
-  const { active, account, chainId } = useWeb3React()
+  const { account } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
@@ -88,24 +79,8 @@ export const DropCreate = (props) => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [drops, setDrops] = useState([])
-
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
-
-  useEffect(() => {
-    let mounted = true
-    async function getDrops() {
-      const drops = await getAllDrops()
-      if (mounted) {
-        setDrops(drops)
-      }
-    }
-    getDrops()
-    return () => {
-      mounted = false
-    }
-  }, [])
 
   useEffect(() => {
     let mounted = true
@@ -149,7 +124,7 @@ export const DropCreate = (props) => {
     let mounted = true
 
     async function getDropInfo() {
-      Promise.all([ethereumContract.name(), ethereumContract.baseURI()]).then(([name, baseURI]) => {
+      Promise.all([ethereumContract.name()]).then(([name]) => {
         if (mounted) {
           setValues((prevValues) => ({
             ...prevValues,

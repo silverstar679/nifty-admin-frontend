@@ -11,7 +11,6 @@ import {
 } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { ethers } from 'ethers'
-import _ from 'lodash'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import AdapterDateFns from '@mui/lab/AdapterDateFns'
@@ -26,7 +25,7 @@ export const ContractInteraction = (props) => {
   const type = props.drop && props.drop.type
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
-  const { active, account, chainId } = useWeb3React()
+  const { active, account } = useWeb3React()
 
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
@@ -146,7 +145,7 @@ export const ContractInteraction = (props) => {
           let defaultTokenCount = await getDefaultTokenCount(_ethereumContract, defaultTokenURI)
           defaultTokenInfo.push({ defaultTokenURI, defaultTokenCount })
         })
-      ).then((_) => {
+      ).then(() => {
         setDefaultTokenInfo(defaultTokenInfo)
       })
     }
@@ -196,7 +195,7 @@ export const ContractInteraction = (props) => {
                     ethereumContract,
                     baseURI,
                     parseInt(totalDefaultNFTTypeCount, 10)
-                  ))().then((e) => {
+                  ))().then(() => {
                   setValues((prevValues) => ({
                     ...prevValues,
                     price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),

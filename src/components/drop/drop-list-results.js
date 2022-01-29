@@ -38,12 +38,13 @@ const NETWORKS = {
 const TYPES = {
   old: 'Old Version',
   replace: 'Battle Royale',
+  noPrize: 'Battle Royale No Prize',
   mint: 'Battle Royale Minting New',
   random: 'Battle Royale Random Part',
 }
 
 export const DropListResults = () => {
-  const { active, account, chainId } = useWeb3React()
+  const { account } = useWeb3React()
 
   const [limit, setLimit] = useState(10)
   const [page, setPage] = useState(0)

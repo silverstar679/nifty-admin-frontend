@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   Box,
   Button,
@@ -22,31 +22,31 @@ import { updateDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
-import fetchPolygonABI from '../../services/fetchPolygonABI'
-import fetchEthereumABI from '../../services/fetchEthereumABI'
-import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
-
 const types = [
   {
     value: 'old',
     label: 'Old Version',
   },
   {
+    value: 'noPrize',
+    label: 'Battle Royale No Prize',
+  },
+  {
     value: 'replace',
-    label: 'BattleRoyale',
+    label: 'Battle Royale',
   },
   {
     value: 'mint',
-    label: 'BattleRoyaleMintingNew',
+    label: 'Battle Royale Minting New',
   },
   {
     value: 'random',
-    label: 'BattleRoyaleRandomPart',
+    label: 'Battle Royale Random Part',
   },
 ]
 
 export const DropDetailUpdate = (props) => {
-  const { active, account, chainId } = useWeb3React()
+  const { account } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
@@ -79,72 +79,6 @@ export const DropDetailUpdate = (props) => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [ethereumAbi, setEthereumAbi] = useState([])
-  const [polygonAbi, setPolygonAbi] = useState([])
-
-  useEffect(() => {
-    let mounted = true
-    async function getABI() {
-      const abi = await fetchEthereumABI(values.address)
-      if (mounted) {
-        setEthereumAbi(abi)
-      }
-    }
-    if (values.address) {
-      getABI()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [values.address])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getABI() {
-      const abi = await fetchPolygonABI(values.polygonContractAddress)
-      if (mounted) {
-        setPolygonAbi(abi)
-      }
-    }
-    if (values.polygonContractAddress) {
-      getABI()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [values.polygonContractAddress])
-
-  const ethereumContract = useEthereumNetworkContract(values.address, ethereumAbi, true)
-
-  const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
-
-  const [battleState, setBattleState] = useState(null)
-  useEffect(() => {
-    let mounted = true
-
-    async function getQueueId() {
-      Promise.all([ethereumContract.battleState()]).then(([battleState]) => {
-        if (mounted) {
-          setBattleState(battleState)
-        }
-      })
-    }
-    if (
-      ethereumContract &&
-      ethereumContract.provider &&
-      ethereumAbi.length !== 0 &&
-      polygonContract &&
-      polygonContract.provider &&
-      polygonAbi.length !== 0
-    ) {
-      getQueueId()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [polygonContract, ethereumContract, polygonAbi, ethereumAbi])
-
   const handleInputChange = (event) => {
     setValues({
       ...values,
@@ -175,6 +109,22 @@ export const DropDetailUpdate = (props) => {
     setIsToast(true)
     setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.DROP_UPDATE_PROGRESS })
   }
+  const successToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_UPDATED })
+  }
+  const failedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.FAILED })
+  }
+  const notAdminToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
+  }
+
   const handleUpdateDrop = async () => {
     if (
       account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
@@ -208,13 +158,10 @@ export const DropDetailUpdate = (props) => {
       }
       toastInProgress()
       const updatedDrop = await updateDrop(props.drop._id, data)
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_UPDATED })
+      if (!!updatedDrop) successToast()
+      else failedToast()
     } else {
-      setIsToast(false)
-      setIsToast(true)
-      setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
+      notAdminToast()
     }
   }
 
