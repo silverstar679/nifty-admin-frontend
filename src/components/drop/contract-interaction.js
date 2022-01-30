@@ -25,7 +25,7 @@ export const ContractInteraction = (props) => {
   const type = props.drop && props.drop.type
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
-  const { active, account } = useWeb3React()
+  const { active, account, chainId } = useWeb3React()
 
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
@@ -291,6 +291,11 @@ export const ContractInteraction = (props) => {
     setIsToast(true)
     setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
   }
+  const incorrectNetwork = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.INCORRECT_NETWORK })
+  }
 
   const toastCompleted = () => {
     setIsToast(false)
@@ -325,232 +330,308 @@ export const ContractInteraction = (props) => {
   }, [active])
 
   const startBattle = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.startBattle()
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.startBattle()
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
   const startBattlePolygon = async () => {
-    if (account === ownerPolygon) {
-      toastInProgress()
-      const tx = await polygonInjectedContract.addToBattleQueue(
-        battleAddress,
-        intervalTime,
-        inPlay.split(','),
-        eliminatedTokenCount
-      )
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
+      if (account === ownerPolygon) {
+        toastInProgress()
+        const tx = await polygonInjectedContract.addToBattleQueue(
+          battleAddress,
+          intervalTime,
+          inPlay.split(','),
+          eliminatedTokenCount
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const withdrawEthEthNet = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.withdrawETH(values.erc20AmountEthNet)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.withdrawETH(values.erc20AmountEthNet)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const withdrawERC20EthNet = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.withdrawERC20Token(
-        values.erc20TokenAddressEthNet,
-        values.erc20AmountEthNet
-      )
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.withdrawERC20Token(
+          values.erc20TokenAddressEthNet,
+          values.erc20AmountEthNet
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const withdrawEthPolyNet = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.withdrawETH(values.erc20AmountPolyNet)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.withdrawETH(values.erc20AmountPolyNet)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const withdrawERC20PolyNet = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.withdrawERC20Token(
-        values.erc20TokenAddressPolyNet,
-        values.erc20AmountPolyNet
-      )
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.withdrawERC20Token(
+          values.erc20TokenAddressPolyNet,
+          values.erc20AmountPolyNet
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateNFTPrice = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.setPrice(ethers.utils.parseEther(values.price))
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.setPrice(ethers.utils.parseEther(values.price))
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const endBattle = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.endBattle(winnerTokenId)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.endBattle(winnerTokenId)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateBaseURI = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.setBaseURI(values.baseURI)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.setBaseURI(values.baseURI)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateDefaultTokenURI = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.setDefaultTokenURI(values.defaultTokenURI)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.setDefaultTokenURI(values.defaultTokenURI)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updatePrizeTokenURI = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.setPrizeTokenURI(values.prizeTokenURI)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.setPrizeTokenURI(values.prizeTokenURI)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateMaxSupply = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.setMaxSupply(values.maxSupply)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.setMaxSupply(values.maxSupply)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateUnitsPerTransaction = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.setUnitsPerTransaction(values.unitsPerTransaction)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.setUnitsPerTransaction(values.unitsPerTransaction)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateDropTime = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.setStartingTime(
-        Date.parse(new Date(dropDate)) / 1000
-      )
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.setStartingTime(
+          Date.parse(new Date(dropDate)) / 1000
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateIntervalTime = async () => {
-    if (account === ownerPolygon) {
-      toastInProgress()
-      const tx = await polygonInjectedContract.setBattleIntervalTime(queueId, intervalTime)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
+      if (account === ownerPolygon) {
+        toastInProgress()
+        const tx = await polygonInjectedContract.setBattleIntervalTime(queueId, intervalTime)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateEliminatedTokenCount = async () => {
-    if (account === ownerPolygon) {
-      toastInProgress()
-      const tx = await polygonInjectedContract.setEliminatedTokenCount(
-        queueId,
-        eliminatedTokenCount
-      )
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
+      if (account === ownerPolygon) {
+        toastInProgress()
+        const tx = await polygonInjectedContract.setEliminatedTokenCount(
+          queueId,
+          eliminatedTokenCount
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const addDefaultToken = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.addTokenURI(
-        values.defaultTokenURIRandom,
-        values.defaultTokenCountRandom
-      )
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.addTokenURI(
+          values.defaultTokenURIRandom,
+          values.defaultTokenCountRandom
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const removeDefaultToken = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.removeTokenURI(values.removableTokenIndex)
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.removeTokenURI(values.removableTokenIndex)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 
   const updateDefaultTokenCount = async () => {
-    if (account === owner) {
-      toastInProgress()
-      const tx = await ethereumInjectedContract.updateTokenURICount(
-        values.defaultTokenURIRandomUpdate,
-        values.defaultTokenCountRandomUpdate
-      )
-      await tx.wait()
-      toastCompleted()
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContract.updateTokenURICount(
+          values.defaultTokenURIRandomUpdate,
+          values.defaultTokenCountRandomUpdate
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
     } else {
-      toastNotOwner()
+      incorrectNetwork()
     }
   }
 

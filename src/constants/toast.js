@@ -21,6 +21,7 @@ export const MESSAGE = {
   SUCCESS_REGISTER_EMAIL: 'You have signed up successfully!',
   WRONG_REGISTER_EMAIL: 'Please use correct email!',
   BATTLE_STARTED: 'Battle Started!',
+  INCORRECT_NETWORK: 'Please connect metamask to correct chain',
 
   DROP_CREATED: 'Drop created successfully',
   DROP_UPDATED: 'Drop updated successfully',

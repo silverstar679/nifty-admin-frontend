@@ -2,10 +2,6 @@ import Head from 'next/head'
 import { Box, Container } from '@mui/material'
 import { DropCreate } from '../../components/drop/drop-create'
 import { DashboardLayout } from '../../components/dashboard-layout'
-import { useSelector } from 'react-redux'
-import { selectDrops } from '../../store/drops/dropsSlice'
-import { useRouter } from 'next/router'
-import _ from 'lodash'
 
 const DropCreatePage = () => {
   return (

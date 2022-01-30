@@ -3,7 +3,6 @@ import { Box, Container } from '@mui/material'
 import { DropDetail } from '../../components/drop/drop-detail'
 import { DashboardLayout } from '../../components/dashboard-layout'
 import { useRouter } from 'next/router'
-import _ from 'lodash'
 
 const DropListDetail = () => {
   const router = useRouter()
