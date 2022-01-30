@@ -157,7 +157,7 @@ export const DropListResults = () => {
                         {drop.name}
                       </Typography>
                     </TableCell>
-                    <TableCell>{displayAddress(drop.address)}</TableCell>
+                    <TableCell>{drop.address && displayAddress(drop.address)}</TableCell>
                     <TableCell>
                       {drop.polygonContractAddress && displayAddress(drop.polygonContractAddress)}
                     </TableCell>
