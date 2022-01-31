@@ -150,135 +150,136 @@ export const ContractInteraction = (props) => {
       })
     }
     async function getDropInfo() {
-      Promise.all([
-        ethereumContract.battleState(),
-        ethereumContract.price(),
-        ethereumContract.startingTime(),
-        ethereumContract.baseURI(),
-        ethereumContract.prizeTokenURI(),
-        ethereumContract.maxSupply(),
-        ethereumContract.unitsPerTransaction(),
-        ethereumContract.owner(),
-        polygonContract.owner(),
-      ]).then(
-        ([
-          battleState,
-          price,
-          startingTime,
-          baseURI,
-          prizeTokenURI,
-          maxSupply,
-          unitsPerTransaction,
-          owner,
-          ownerPolygon,
-        ]) => {
-          setOwner(owner)
-          setOwnerPolygon(ownerPolygon)
-          setBattleState(parseInt(battleState, 10))
-          if (
-            parseInt(battleState, 10) !== 0 &&
-            queueId &&
-            new Date(props.drop.battleDate) < new Date(Date.now() + 100000)
-          ) {
-            Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
-              setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
-              setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
-              setIsBattleEnded(battleInfo.battleState)
-              setWinnerTokenId(battleInfo.winnerTokenId)
-            })
-          }
-          if (type === 'random') {
-            Promise.all([ethereumContract.totalDefaultNFTTypeCount()]).then(
-              ([totalDefaultNFTTypeCount]) => {
-                ;(async () =>
-                  await getMetadataInfo(
-                    ethereumContract,
-                    baseURI,
-                    parseInt(totalDefaultNFTTypeCount, 10)
-                  ))().then(() => {
-                  setValues((prevValues) => ({
-                    ...prevValues,
-                    price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
-                    baseURI,
-                    prizeTokenURI,
-                    maxSupply: BigNumber.from(maxSupply).toNumber(),
-                    unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
-                  }))
-                  setDropDate(
-                    new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString()
+      if (ethereumContract && ethereumContract.provider && ethereumAbi.length !== 0) {
+        Promise.all([
+          ethereumContract.battleState(),
+          ethereumContract.price(),
+          ethereumContract.startingTime(),
+          ethereumContract.baseURI(),
+          ethereumContract.prizeTokenURI(),
+          ethereumContract.maxSupply(),
+          ethereumContract.unitsPerTransaction(),
+          ethereumContract.owner(),
+        ]).then(
+          ([
+            battleState,
+            price,
+            startingTime,
+            baseURI,
+            prizeTokenURI,
+            maxSupply,
+            unitsPerTransaction,
+            owner,
+          ]) => {
+            setOwner(owner)
+            setBattleState(parseInt(battleState, 10))
+            if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
+              Promise.all([polygonContract.owner()]).then(([ownerPolygon]) => {
+                setOwnerPolygon(ownerPolygon)
+              })
+              if (
+                parseInt(battleState, 10) !== 0 &&
+                queueId &&
+                new Date(props.drop.battleDate) < new Date(Date.now() + 600000)
+              ) {
+                Promise.all([polygonContract.battleQueue(queueId)]).then(([battleInfo]) => {
+                  setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
+                  setEliminatedTokenCount(
+                    BigNumber.from(battleInfo.eliminatedTokenCount).toNumber()
                   )
+                  setIsBattleEnded(battleInfo.battleState)
+                  setWinnerTokenId(battleInfo.winnerTokenId)
                 })
               }
-            )
-          } else {
-            Promise.all([ethereumContract.defaultTokenURI()]).then(([defaultTokenURI]) => {
-              setValues((prevValues) => ({
-                ...prevValues,
-                price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
-                baseURI,
-                defaultTokenURI,
-                prizeTokenURI,
-                maxSupply: BigNumber.from(maxSupply).toNumber(),
-                unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
-              }))
-              setDropDate(new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString())
-            })
+
+              polygonContract.removeAllListeners('BattleAdded')
+
+              polygonContract.on('BattleAdded', (battle, event) => {
+                if (battleAddress === battle.gameAddr) {
+                  setIsBattleAdded(true)
+                }
+              })
+              polygonContract.removeAllListeners('BattleEnded')
+
+              polygonContract.on(
+                'BattleEnded',
+                (finished, gameAddr, winnerTokenId, battleState, event) => {
+                  if (battleAddress === gameAddr) {
+                    setWinnerTokenId(parseInt(winnerTokenId, 10))
+                    setIsBattleEnded(true)
+                  }
+                }
+              )
+            }
+
+            if (type === 'random') {
+              Promise.all([ethereumContract.totalDefaultNFTTypeCount()]).then(
+                ([totalDefaultNFTTypeCount]) => {
+                  ;(async () =>
+                    await getMetadataInfo(
+                      ethereumContract,
+                      baseURI,
+                      parseInt(totalDefaultNFTTypeCount, 10)
+                    ))().then(() => {
+                    setValues((prevValues) => ({
+                      ...prevValues,
+                      price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
+                      baseURI,
+                      prizeTokenURI,
+                      maxSupply: BigNumber.from(maxSupply).toNumber(),
+                      unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
+                    }))
+                    setDropDate(
+                      new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString()
+                    )
+                  })
+                }
+              )
+            } else {
+              Promise.all([ethereumContract.defaultTokenURI()]).then(([defaultTokenURI]) => {
+                setValues((prevValues) => ({
+                  ...prevValues,
+                  price: Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())),
+                  baseURI,
+                  defaultTokenURI,
+                  prizeTokenURI,
+                  maxSupply: BigNumber.from(maxSupply).toNumber(),
+                  unitsPerTransaction: BigNumber.from(unitsPerTransaction).toNumber(),
+                }))
+                setDropDate(
+                  new Date(BigNumber.from(startingTime).mul(1000).toNumber()).toISOString()
+                )
+              })
+            }
           }
-        }
-      )
-    }
-    if (
-      ethereumContract &&
-      ethereumContract.provider &&
-      polygonContract &&
-      polygonContract.provider &&
-      polygonAbi.length !== 0 &&
-      ethereumAbi.length !== 0
-    ) {
-      getDropInfo()
+        )
 
-      ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
-        if (battleAddress === battleAddressEmitted) {
-          setInPlay(inPlayEmitted.join(','))
-          setBattleState(1)
-        }
-      })
-      ethereumContract.removeAllListeners('BattleEnded')
-
-      ethereumContract.on(
-        'BattleEnded',
-        (battleAddressEmitted, winnerTokenId, prizeTokenURI, event) => {
+        ethereumContract.on('BattleStarted', (battleAddressEmitted, inPlayEmitted, event) => {
           if (battleAddress === battleAddressEmitted) {
-            setBattleState(2)
+            setInPlay(inPlayEmitted.join(','))
+            setBattleState(1)
           }
-        }
-      )
-      polygonContract.removeAllListeners('BattleAdded')
+        })
+        ethereumContract.removeAllListeners('BattleEnded')
 
-      polygonContract.on('BattleAdded', (battle, event) => {
-        if (battleAddress === battle.gameAddr) {
-          setIsBattleAdded(true)
-        }
-      })
-      polygonContract.removeAllListeners('BattleEnded')
-
-      polygonContract.on('BattleEnded', (finished, gameAddr, winnerTokenId, battleState, event) => {
-        if (battleAddress === gameAddr) {
-          setWinnerTokenId(parseInt(winnerTokenId, 10))
-          setIsBattleEnded(true)
-        }
-      })
+        ethereumContract.on(
+          'BattleEnded',
+          (battleAddressEmitted, winnerTokenId, prizeTokenURI, event) => {
+            if (battleAddress === battleAddressEmitted) {
+              setBattleState(2)
+            }
+          }
+        )
+      }
     }
+    getDropInfo()
 
     return () => {
-      if (
-        ethereumContract &&
-        polygonContract &&
-        ethereumContract.provider &&
-        polygonContract.provider
-      ) {
-        polygonContract.removeListener('BattleEnded')
-        polygonContract.removeListener('BattleAdded')
+      if (ethereumContract && ethereumContract.provider) {
+        if (polygonContract && polygonContract.provider) {
+          polygonContract.removeListener('BattleEnded')
+          polygonContract.removeListener('BattleAdded')
+        }
         ethereumContract.removeListener('BattleEnded')
         ethereumContract.removeListener('BattleStarted')
       }
@@ -1175,7 +1176,12 @@ export const ContractInteraction = (props) => {
             <CardHeader title="Queue ID" sx={{ py: 1 }} />
             <Divider />
             <CardContent>
-              <TextField fullWidth label="Queue ID" value={queueId} variant="outlined" />
+              <TextField
+                fullWidth
+                label="Queue ID"
+                value={queueId ? queueId : 'Not Set'}
+                variant="outlined"
+              />
             </CardContent>
           </Card>
           <Box sx={{ py: 1 }} />
@@ -1194,7 +1200,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleIntervalTimeChange}
                     value={intervalTime}
                     variant="outlined"
-                    disabled={battleState === 2 || isBattleAdded ? true : false}
+                    disabled={battleState !== 1 || isBattleAdded ? true : false}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1206,7 +1212,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleEliminatedTokenCountChange}
                     value={eliminatedTokenCount}
                     variant="outlined"
-                    disabled={battleState === 2 || isBattleAdded ? true : false}
+                    disabled={battleState !== 1 || isBattleAdded ? true : false}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -1217,7 +1223,7 @@ export const ContractInteraction = (props) => {
                     onChange={handleInPlayChange}
                     value={inPlay}
                     variant="outlined"
-                    disabled={battleState === 2 || isBattleAdded ? true : false}
+                    disabled={battleState !== 1 || isBattleAdded ? true : false}
                   />
                 </Grid>
               </Grid>
@@ -1233,7 +1239,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={startBattlePolygon}
-                disabled={battleState === 2 || isBattleAdded ? true : false}
+                disabled={battleState !== 1 || isBattleAdded ? true : false}
               >
                 Start
               </Button>
@@ -1256,7 +1262,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleIntervalTimeChange}
                 value={intervalTime}
                 variant="outlined"
-                disabled={battleState === 2 ? true : false}
+                disabled={battleState !== 1 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1271,7 +1277,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={updateIntervalTime}
-                disabled={battleState === 2 ? true : false}
+                disabled={battleState !== 1 ? true : false}
               >
                 Update
               </Button>
@@ -1292,7 +1298,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleEliminatedTokenCountChange}
                 value={eliminatedTokenCount}
                 variant="outlined"
-                disabled={battleState === 2 ? true : false}
+                disabled={battleState !== 1 ? true : false}
               />
             </CardContent>
             <Divider />
@@ -1307,7 +1313,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={updateEliminatedTokenCount}
-                disabled={battleState === 2 ? true : false}
+                disabled={battleState !== 1 ? true : false}
               >
                 Update
               </Button>
