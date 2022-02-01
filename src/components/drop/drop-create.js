@@ -59,6 +59,7 @@ export const DropCreate = (props) => {
     prizeMetadata: '',
     defaultNFTUri: '',
     description: '',
+    prizeDescription: '',
     polygonContractAddress: '',
     queueId: '',
     type: 'replace',
@@ -227,6 +228,7 @@ export const DropCreate = (props) => {
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
         description: values.description,
+        prizeDescription: values.prizeDescription,
         defaultMetadata: values.defaultMetadata,
         prizeMetadata: values.prizeMetadata,
         defaultNFTUri: values.defaultNFTUri,
@@ -419,6 +421,18 @@ export const DropCreate = (props) => {
                   rows={3}
                   onChange={handleInputChange}
                   value={values.description}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Prize Description"
+                  name="prizeDescription"
+                  rows={3}
+                  onChange={handleInputChange}
+                  value={values.prizeDescription}
                   variant="outlined"
                 />
               </Grid>

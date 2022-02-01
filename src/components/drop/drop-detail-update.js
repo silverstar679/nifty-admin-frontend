@@ -61,6 +61,7 @@ export const DropDetailUpdate = (props) => {
     prizeMetadata: props.drop.prizeMetadata,
     defaultNFTUri: props.drop.defaultNFTUri,
     description: props.drop.description,
+    prizeDescription: props.drop.prizeDescription,
     threshold: props.drop.threshold,
     previewMedia: props.drop.previewMedia,
     created_at: props.drop.created_at,
@@ -140,6 +141,7 @@ export const DropDetailUpdate = (props) => {
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
         description: values.description,
+        prizeDescription: values.prizeDescription,
         defaultMetadata: values.defaultMetadata,
         prizeMetadata: values.prizeMetadata,
         defaultNFTUri: values.defaultNFTUri,
@@ -333,6 +335,18 @@ export const DropDetailUpdate = (props) => {
                   rows={3}
                   onChange={handleInputChange}
                   value={values.description}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Prize Description"
+                  name="prizeDescription"
+                  rows={3}
+                  onChange={handleInputChange}
+                  value={values.prizeDescription}
                   variant="outlined"
                 />
               </Grid>
