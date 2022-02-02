@@ -60,6 +60,7 @@ export const DropDetailUpdate = (props) => {
     defaultMetadata: props.drop.defaultMetadata,
     prizeMetadata: props.drop.prizeMetadata,
     defaultNFTUri: props.drop.defaultNFTUri,
+    battleMessage: props.drop.battleMessage,
     description: props.drop.description,
     prizeDescription: props.drop.prizeDescription,
     threshold: props.drop.threshold,
@@ -140,6 +141,7 @@ export const DropDetailUpdate = (props) => {
         network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
+        battleMessage: values.battleMessage,
         description: values.description,
         prizeDescription: values.prizeDescription,
         defaultMetadata: values.defaultMetadata,
@@ -323,6 +325,18 @@ export const DropDetailUpdate = (props) => {
                   name="defaultNFTUri"
                   onChange={handleInputChange}
                   value={values.defaultNFTUri}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Battle Message"
+                  name="battleMessage"
+                  rows={1}
+                  onChange={handleInputChange}
+                  value={values.battleMessage}
                   variant="outlined"
                 />
               </Grid>

@@ -681,7 +681,7 @@ export const ContractInteraction = (props) => {
                 onChange={handleWinnerTokenIdChange}
                 value={winnerTokenId}
                 variant="outlined"
-                disabled={isBattleEnded === false || battleState === 2 ? true : false}
+                disabled={battleState === 1 ? false : true}
               />
             </CardContent>
             <Divider />
@@ -696,7 +696,7 @@ export const ContractInteraction = (props) => {
                 color="primary"
                 variant="contained"
                 onClick={endBattle}
-                disabled={isBattleEnded === false || battleState === 2 ? true : false}
+                disabled={battleState === 1 ? false : true}
               >
                 End
               </Button>

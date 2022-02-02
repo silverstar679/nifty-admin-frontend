@@ -58,6 +58,7 @@ export const DropCreate = (props) => {
     defaultMetadata: '',
     prizeMetadata: '',
     defaultNFTUri: '',
+    battleMessage: '',
     description: '',
     prizeDescription: '',
     polygonContractAddress: '',
@@ -227,6 +228,7 @@ export const DropCreate = (props) => {
         network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
+        battleMessage: values.battleMessage,
         description: values.description,
         prizeDescription: values.prizeDescription,
         defaultMetadata: values.defaultMetadata,
@@ -409,6 +411,18 @@ export const DropCreate = (props) => {
                   name="defaultNFTUri"
                   onChange={handleInputChange}
                   value={values.defaultNFTUri}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Battle Message"
+                  name="battleMessage"
+                  rows={1}
+                  onChange={handleInputChange}
+                  value={values.battleMessage}
                   variant="outlined"
                 />
               </Grid>
