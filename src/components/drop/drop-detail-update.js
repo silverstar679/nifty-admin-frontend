@@ -64,7 +64,7 @@ export const DropDetailUpdate = (props) => {
     description: props.drop.description,
     prizeDescription: props.drop.prizeDescription,
     threshold: props.drop.threshold,
-    previewMedia: props.drop.previewMedia,
+    previewMedia: JSON.stringify(props.drop.previewMedia),
     created_at: props.drop.created_at,
   })
 
