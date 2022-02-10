@@ -50,8 +50,8 @@ export const DashboardLayout = (props) => {
   useEffect(() => {
     if (active) {
       if (
-        account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
-        account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT
+        account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
+        account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()
       ) {
         connectedToast()
       } else {
@@ -67,8 +67,8 @@ export const DashboardLayout = (props) => {
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       {active &&
-        (account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
-          account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT) && (
+        (account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
+          account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()) && (
           <DashboardLayoutRoot>
             <Box
               sx={{

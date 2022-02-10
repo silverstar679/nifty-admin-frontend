@@ -129,8 +129,8 @@ export const DropDetailUpdate = (props) => {
 
   const handleUpdateDrop = async () => {
     if (
-      account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT ||
-      account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT
+      account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
+      account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()
     ) {
       const data = {
         name: values.name,
