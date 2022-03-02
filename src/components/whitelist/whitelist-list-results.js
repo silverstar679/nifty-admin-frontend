@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import PerfectScrollbar from 'react-perfect-scrollbar'
-import { format } from 'date-fns'
 import {
   Box,
   Card,
@@ -23,22 +22,13 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import EditIcon from '@mui/icons-material/Edit'
 import { displayAddress } from '../../utils/displayAddress'
 import NextLink from 'next/link'
-import { deleteDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
-import { getAllDrops } from '../../services/apis'
+import { getAllWhitelists, deleteWhitelist } from '../../services/apis'
 import _ from 'lodash'
 import { useWeb3React } from '../../hooks'
 
-const TYPES = {
-  old: 'Old Version',
-  replace: 'Battle Royale',
-  noPrize: 'Battle Royale No Prize',
-  mint: 'Battle Royale Minting New',
-  random: 'Battle Royale Random Part',
-}
-
-export const DropListResults = () => {
+export const WhitelistListResults = () => {
   const { account } = useWeb3React()
 
   const [limit, setLimit] = useState(10)
@@ -49,18 +39,18 @@ export const DropListResults = () => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [drops, setDrops] = useState([])
+  const [whitelists, setWhitelists] = useState([])
 
   useEffect(() => {
     let mounted = true
-    async function getDrops() {
-      const drops = await getAllDrops()
-      const sortedDrops = _.reverse(_.sortBy(drops, ['created_at']))
+    async function getWhitelists() {
+      const whitelists = await getAllWhitelists()
+      const sortedWhitelists = _.reverse(_.sortBy(whitelists, ['created_at']))
       if (mounted) {
-        setDrops(sortedDrops)
+        setWhitelists(sortedWhitelists)
       }
     }
-    getDrops()
+    getWhitelists()
     return () => {
       mounted = false
     }
@@ -79,7 +69,7 @@ export const DropListResults = () => {
     setIsToast(false)
   }
 
-  const handleDeleteDrop = async () => {
+  const handleDeleteWhitelist = async () => {
     if (
       account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
       account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()
@@ -89,12 +79,12 @@ export const DropListResults = () => {
       setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETING })
-      const deletedDrop = await deleteDrop(selectedId)
-      if (!!deletedDrop) {
-        const filteredDrops = _.filter(drops, function (o) {
+      const deletedWhitelist = await deleteWhitelist(selectedId)
+      if (!!deletedWhitelist) {
+        const filteredWhitelists = _.filter(whitelists, function (o) {
           return o._id !== selectedId
         })
-        setDrops(filteredDrops)
+        setWhitelists(filteredWhitelists)
 
         setIsToast(false)
         setIsToast(true)
@@ -119,7 +109,7 @@ export const DropListResults = () => {
   const handlePageChange = (event, newPage) => {
     setPage(newPage)
   }
-  if (drops === []) return null
+  if (whitelists === []) return null
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -133,45 +123,19 @@ export const DropListResults = () => {
                   <TableCell>No</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>ETH Address</TableCell>
-                  <TableCell>Polygon Address</TableCell>
-                  <TableCell>Queue ID</TableCell>
-                  <TableCell>Type</TableCell>
-                  <TableCell>Drop Status</TableCell>
-                  <TableCell>Battle Status</TableCell>
-                  <TableCell>Drop Date</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {drops.slice(page * limit, page * limit + limit).map((drop, index) => (
-                  <TableRow hover key={drop._id}>
+                {whitelists.slice(page * limit, page * limit + limit).map((whitelist, index) => (
+                  <TableRow hover key={whitelist._id}>
                     <TableCell>{page * limit + index + 1}</TableCell>
                     <TableCell>
                       <Typography color="textPrimary" variant="body1">
-                        {drop.name}
+                        {whitelist.name}
                       </Typography>
                     </TableCell>
-                    <TableCell>{drop.address && displayAddress(drop.address)}</TableCell>
-                    <TableCell>
-                      {drop.polygonContractAddress && displayAddress(drop.polygonContractAddress)}
-                    </TableCell>
-                    <TableCell>{drop.queueId}</TableCell>
-                    <TableCell>{TYPES[drop.type]}</TableCell>
-                    <TableCell>
-                      {drop.isDropEnded
-                        ? 'Done'
-                        : new Date(drop.dropDate) <= new Date(Date.now())
-                        ? 'Started'
-                        : 'New'}
-                    </TableCell>
-                    <TableCell>
-                      {drop.isBattleEnded
-                        ? 'Done'
-                        : new Date(drop.battleDate) <= new Date(Date.now())
-                        ? 'Started'
-                        : 'New'}
-                    </TableCell>
-                    <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
+                    <TableCell>{whitelist.address && displayAddress(whitelist.address)}</TableCell>
                     <TableCell>
                       <Box
                         sx={{
@@ -181,8 +145,8 @@ export const DropListResults = () => {
                       >
                         <NextLink
                           href={{
-                            pathname: '/drops/[id]',
-                            query: { id: drop._id },
+                            pathname: '/whitelists/[id]',
+                            query: { id: whitelist._id },
                           }}
                         >
                           <IconButton size="small">
@@ -190,7 +154,7 @@ export const DropListResults = () => {
                           </IconButton>
                         </NextLink>
 
-                        <IconButton size="small" onClick={() => handleClickOpen(drop._id)}>
+                        <IconButton size="small" onClick={() => handleClickOpen(whitelist._id)}>
                           <DeleteForeverIcon fontSize="small" color="error" />
                         </IconButton>
                       </Box>
@@ -203,7 +167,7 @@ export const DropListResults = () => {
         </PerfectScrollbar>
         <TablePagination
           component="div"
-          count={drops.length}
+          count={whitelists.length}
           onPageChange={handlePageChange}
           onRowsPerPageChange={handleLimitChange}
           page={page}
@@ -220,12 +184,12 @@ export const DropListResults = () => {
         <DialogTitle id="alert-dialog-title">{'Confirm'}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure to delete this drop permanently?
+            Are you sure to delete this whitelist permanently?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose}>Cancel</Button>
-          <Button onClick={handleDeleteDrop} autoFocus>
+          <Button onClick={handleDeleteWhitelist} autoFocus>
             Ok
           </Button>
         </DialogActions>

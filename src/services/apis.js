@@ -39,3 +39,39 @@ export async function createDrop(data) {
     console.error(error)
   }
 }
+
+export async function getAllWhitelists() {
+  try {
+    const response = await axios.get(`${baseURL}/whitelists?network=${network}`)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export async function deleteWhitelist(id) {
+  try {
+    const response = await axios.delete(`${baseURL}/whitelist/${id}`)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export async function updateWhitelist(id, data) {
+  try {
+    const response = await axios.put(`${baseURL}/whitelist/${id}`, data)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export async function createWhitelist(data) {
+  try {
+    const response = await axios.post(`${baseURL}/whitelists`, data)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}

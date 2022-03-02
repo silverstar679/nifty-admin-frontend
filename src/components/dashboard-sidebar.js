@@ -5,6 +5,7 @@ import PropTypes from 'prop-types'
 import { Box, Divider, Drawer, Typography, useMediaQuery } from '@mui/material'
 import { ChartBar as ChartBarIcon } from '../icons/chart-bar'
 import { ShoppingBag as ShoppingBagIcon } from '../icons/shopping-bag'
+import { User as UserIcon } from '../icons/user'
 import { NavItem } from './nav-item'
 
 const items = [
@@ -17,6 +18,11 @@ const items = [
     href: '/drops',
     icon: <ShoppingBagIcon fontSize="small" />,
     title: 'Drops',
+  },
+  {
+    href: '/whitelists',
+    icon: <UserIcon fontSize="small" />,
+    title: 'WhiteList',
   },
 ]
 
