@@ -4,6 +4,7 @@ import TabContext from '@mui/lab/TabContext'
 import TabList from '@mui/lab/TabList'
 import TabPanel from '@mui/lab/TabPanel'
 import { WhitelistDetailUpdate } from './whitelist-detail-update'
+import { MerkleRootGenerator } from './merkleroot-generator'
 import { getAllWhitelists } from '../../services/apis'
 import _ from 'lodash'
 
@@ -19,7 +20,7 @@ export const WhitelistDetail = (props) => {
       setWhitelist(selectedWhitelist)
     }
     getWhitelists()
-  }, [id])
+  }, [id, value])
 
   const handleChange = (event, newValue) => {
     setValue(newValue)
@@ -33,10 +34,14 @@ export const WhitelistDetail = (props) => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList onChange={handleChange} aria-label="Whitelist Detail Tabs">
             <Tab label="Whitelist Detail Update" value="1" />
+            <Tab label="Merkle Root" value="2" />
           </TabList>
         </Box>
         <TabPanel value="1">
           <WhitelistDetailUpdate whitelist={whitelist} />
+        </TabPanel>
+        <TabPanel value="2">
+          <MerkleRootGenerator whitelist={whitelist} />
         </TabPanel>
       </TabContext>
     </Box>

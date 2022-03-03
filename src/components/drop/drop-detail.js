@@ -20,7 +20,7 @@ export const DropDetail = (props) => {
       setDrop(selectedDrop)
     }
     getDrops()
-  }, [id])
+  }, [id, value])
 
   const handleChange = (event, newValue) => {
     setValue(newValue)
