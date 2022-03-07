@@ -24,6 +24,11 @@ const items = [
     icon: <UserIcon fontSize="small" />,
     title: 'WhiteList',
   },
+  {
+    href: '/collectionBattles',
+    icon: <UserIcon fontSize="small" />,
+    title: 'Collection Battles',
+  },
 ]
 
 export const DashboardSidebar = (props) => {

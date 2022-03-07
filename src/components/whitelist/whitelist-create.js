@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
-import { createWhitelist } from 'src/services/apis'
+import { createCollection } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
@@ -64,7 +64,7 @@ export const WhitelistCreate = (props) => {
         created_at: values.created_at,
       }
       toastInProgress()
-      const createdWhitelist = await createWhitelist(data)
+      const createdWhitelist = await createCollection(data)
       if (!!createdWhitelist) successToast()
       else failedToast()
     } else {

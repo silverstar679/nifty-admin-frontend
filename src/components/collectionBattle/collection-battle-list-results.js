@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import PerfectScrollbar from 'react-perfect-scrollbar'
+import { format } from 'date-fns'
 import {
   Box,
   Card,
@@ -22,13 +23,16 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import EditIcon from '@mui/icons-material/Edit'
 import { displayAddress } from '../../utils/displayAddress'
 import NextLink from 'next/link'
+import { deleteCollectionBattle } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
-import { getAllCollections, deleteCollection } from '../../services/apis'
+import { getAllCollectionBattles } from '../../services/apis'
 import _ from 'lodash'
 import { useWeb3React } from '../../hooks'
 
-export const WhitelistListResults = () => {
+const STATUS = ['Initialized', 'Started', 'Ended']
+
+export const CollectionBattleListResults = () => {
   const { account } = useWeb3React()
 
   const [limit, setLimit] = useState(10)
@@ -39,18 +43,18 @@ export const WhitelistListResults = () => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [whitelists, setWhitelists] = useState([])
+  const [collectionBattles, setCollectionBattles] = useState([])
 
   useEffect(() => {
     let mounted = true
-    async function getWhitelists() {
-      const whitelists = await getAllCollections()
-      const sortedWhitelists = _.reverse(_.sortBy(whitelists, ['created_at']))
+    async function getCollectionBattles() {
+      const collectionBattles = await getAllCollectionBattles()
+      const sortedCollectionBattles = _.reverse(_.sortBy(collectionBattles, ['created_at']))
       if (mounted) {
-        setWhitelists(sortedWhitelists)
+        setCollectionBattles(sortedCollectionBattles)
       }
     }
-    getWhitelists()
+    getCollectionBattles()
     return () => {
       mounted = false
     }
@@ -69,7 +73,7 @@ export const WhitelistListResults = () => {
     setIsToast(false)
   }
 
-  const handleDeleteWhitelist = async () => {
+  const handleDeleteCollectionBattle = async () => {
     if (
       account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
       account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()
@@ -79,12 +83,12 @@ export const WhitelistListResults = () => {
       setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETING })
-      const deletedWhitelist = await deleteCollection(selectedId)
-      if (!!deletedWhitelist) {
-        const filteredWhitelists = _.filter(whitelists, function (o) {
+      const deletedCollectionBattle = await deleteCollectionBattle(selectedId)
+      if (!!deletedCollectionBattle) {
+        const filteredCollectionBattles = _.filter(collectionBattles, function (o) {
           return o._id !== selectedId
         })
-        setWhitelists(filteredWhitelists)
+        setCollectionBattles(filteredCollectionBattles)
 
         setIsToast(false)
         setIsToast(true)
@@ -109,7 +113,7 @@ export const WhitelistListResults = () => {
   const handlePageChange = (event, newPage) => {
     setPage(newPage)
   }
-  if (whitelists === []) return null
+  if (collectionBattles === []) return null
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -123,51 +127,71 @@ export const WhitelistListResults = () => {
                   <TableCell>No</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>ETH Address</TableCell>
+                  <TableCell>Polygon Address</TableCell>
+                  <TableCell>Queue ID</TableCell>
+                  <TableCell>Battle Status</TableCell>
+                  <TableCell>Battle Date</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {whitelists.slice(page * limit, page * limit + limit).map((whitelist, index) => (
-                  <TableRow hover key={whitelist._id}>
-                    <TableCell>{page * limit + index + 1}</TableCell>
-                    <TableCell>
-                      <Typography color="textPrimary" variant="body1">
-                        {whitelist.name}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>{whitelist.address && displayAddress(whitelist.address)}</TableCell>
-                    <TableCell>
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <NextLink
-                          href={{
-                            pathname: '/whitelists/[id]',
-                            query: { id: whitelist._id },
+                {collectionBattles
+                  .slice(page * limit, page * limit + limit)
+                  .map((collectionBattle, index) => (
+                    <TableRow hover key={collectionBattle._id}>
+                      <TableCell>{page * limit + index + 1}</TableCell>
+                      <TableCell>
+                        <Typography color="textPrimary" variant="body1">
+                          {collectionBattle.name}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        {collectionBattle.address && displayAddress(collectionBattle.address)}
+                      </TableCell>
+                      <TableCell>
+                        {collectionBattle.polygonContractAddress &&
+                          displayAddress(collectionBattle.polygonContractAddress)}
+                      </TableCell>
+                      <TableCell>{collectionBattle.queueId}</TableCell>
+                      <TableCell>{STATUS[collectionBattle.battleStatus]}</TableCell>
+                      <TableCell>
+                        {format(new Date(collectionBattle.battleDate), 'MM/dd/yyyy - hh:mm')}
+                      </TableCell>
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'center',
                           }}
                         >
-                          <IconButton size="small">
-                            <EditIcon fontSize="small" color="primary" />
-                          </IconButton>
-                        </NextLink>
+                          <NextLink
+                            href={{
+                              pathname: '/collectionBattles/[id]',
+                              query: { id: collectionBattle._id },
+                            }}
+                          >
+                            <IconButton size="small">
+                              <EditIcon fontSize="small" color="primary" />
+                            </IconButton>
+                          </NextLink>
 
-                        <IconButton size="small" onClick={() => handleClickOpen(whitelist._id)}>
-                          <DeleteForeverIcon fontSize="small" color="error" />
-                        </IconButton>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <IconButton
+                            size="small"
+                            onClick={() => handleClickOpen(collectionBattle._id)}
+                          >
+                            <DeleteForeverIcon fontSize="small" color="error" />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </Box>
         </PerfectScrollbar>
         <TablePagination
           component="div"
-          count={whitelists.length}
+          count={collectionBattles.length}
           onPageChange={handlePageChange}
           onRowsPerPageChange={handleLimitChange}
           page={page}
@@ -184,12 +208,12 @@ export const WhitelistListResults = () => {
         <DialogTitle id="alert-dialog-title">{'Confirm'}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure to delete this whitelist permanently?
+            Are you sure to delete this collectionBattle permanently?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose}>Cancel</Button>
-          <Button onClick={handleDeleteWhitelist} autoFocus>
+          <Button onClick={handleDeleteCollectionBattle} autoFocus>
             Ok
           </Button>
         </DialogActions>

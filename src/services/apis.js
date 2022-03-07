@@ -40,36 +40,72 @@ export async function createDrop(data) {
   }
 }
 
-export async function getAllWhitelists() {
+export async function getAllCollections() {
   try {
-    const response = await axios.get(`${baseURL}/whitelists?network=${network}`)
+    const response = await axios.get(`${baseURL}/collections?network=${network}`)
     return response.data
   } catch (error) {
     console.error(error)
   }
 }
 
-export async function deleteWhitelist(id) {
+export async function deleteCollection(id) {
   try {
-    const response = await axios.delete(`${baseURL}/whitelist/${id}`)
+    const response = await axios.delete(`${baseURL}/collection/${id}`)
     return response.data
   } catch (error) {
     console.error(error)
   }
 }
 
-export async function updateWhitelist(id, data) {
+export async function updateCollection(id, data) {
   try {
-    const response = await axios.put(`${baseURL}/whitelist/${id}`, data)
+    const response = await axios.put(`${baseURL}/collection/${id}`, data)
     return response.data
   } catch (error) {
     console.error(error)
   }
 }
 
-export async function createWhitelist(data) {
+export async function createCollection(data) {
   try {
-    const response = await axios.post(`${baseURL}/whitelists`, data)
+    const response = await axios.post(`${baseURL}/collections`, data)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export async function getAllCollectionBattles() {
+  try {
+    const response = await axios.get(`${baseURL}/collectionBattles?network=${network}`)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export async function deleteCollectionBattle(id) {
+  try {
+    const response = await axios.delete(`${baseURL}/collectionBattle/${id}`)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export async function updateCollectionBattle(id, data) {
+  try {
+    const response = await axios.put(`${baseURL}/collectionBattle/${id}`, data)
+    return response.data
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+export async function createCollectionBattle(data) {
+  try {
+    const response = await axios.post(`${baseURL}/collectionBattles`, data)
     return response.data
   } catch (error) {
     console.error(error)

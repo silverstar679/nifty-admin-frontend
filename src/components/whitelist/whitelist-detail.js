@@ -5,7 +5,7 @@ import TabList from '@mui/lab/TabList'
 import TabPanel from '@mui/lab/TabPanel'
 import { WhitelistDetailUpdate } from './whitelist-detail-update'
 import { MerkleRootGenerator } from './merkleroot-generator'
-import { getAllWhitelists } from '../../services/apis'
+import { getAllCollections } from '../../services/apis'
 import _ from 'lodash'
 
 export const WhitelistDetail = (props) => {
@@ -15,7 +15,7 @@ export const WhitelistDetail = (props) => {
 
   useEffect(() => {
     async function getWhitelists() {
-      const whitelists = await getAllWhitelists()
+      const whitelists = await getAllCollections()
       const selectedWhitelist = _.find(whitelists, { _id: id })
       setWhitelist(selectedWhitelist)
     }

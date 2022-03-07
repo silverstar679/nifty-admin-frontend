@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
-import { updateWhitelist } from 'src/services/apis'
+import { updateCollection } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
@@ -63,7 +63,7 @@ export const WhitelistDetailUpdate = (props) => {
         created_at: values.created_at,
       }
       toastInProgress()
-      const updatedWhitelist = await updateWhitelist(props.whitelist._id, data)
+      const updatedWhitelist = await updateCollection(props.whitelist._id, data)
       if (!!updatedWhitelist) successToast()
       else failedToast()
     } else {
