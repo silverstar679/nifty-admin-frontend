@@ -20,9 +20,9 @@ const items = [
     title: 'Drops',
   },
   {
-    href: '/whitelists',
+    href: '/collections',
     icon: <UserIcon fontSize="small" />,
-    title: 'WhiteList',
+    title: 'Collections',
   },
   {
     href: '/collectionBattles',
