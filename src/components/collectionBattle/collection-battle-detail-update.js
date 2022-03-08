@@ -42,6 +42,8 @@ export const CollectionBattleDetailUpdate = (props) => {
     address: props.collectionBattle.address,
     polygonContractAddress: props.collectionBattle.polygonContractAddress,
     queueId: props.collectionBattle.queueId,
+    prizeContractAddress: props.collectionBattle.prizeContractAddress,
+    prizeTokenId: props.collectionBattle.prizeTokenId,
     battleStatus: props.collectionBattle.battleStatus,
     tokenIds: props.collectionBattle.tokenIds,
     created_at: props.collectionBattle.created_at,
@@ -99,6 +101,8 @@ export const CollectionBattleDetailUpdate = (props) => {
         network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
+        prizeContractAddress: values.prizeContractAddress,
+        prizeTokenId: values.prizeTokenId,
         tokenIds: values.tokenIds,
         battleDate,
         created_at: values.created_at,
@@ -124,6 +128,16 @@ export const CollectionBattleDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
+                  label="Collection Battle Name"
+                  name="name"
+                  onChange={handleInputChange}
+                  value={values.name}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
                   label="Ethereum Contract Address"
                   name="address"
                   onChange={handleInputChange}
@@ -131,23 +145,7 @@ export const CollectionBattleDetailUpdate = (props) => {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Select Battle Status"
-                  name="battleStatus"
-                  onChange={handleInputChange}
-                  select
-                  value={values.battleStatus}
-                  variant="outlined"
-                >
-                  {STATUS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
+
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
@@ -167,6 +165,43 @@ export const CollectionBattleDetailUpdate = (props) => {
                   value={values.queueId}
                   variant="outlined"
                 />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Contract Address"
+                  name="prizeContractAddress"
+                  onChange={handleInputChange}
+                  value={values.prizeContractAddress}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Token Id"
+                  name="prizeTokenId"
+                  onChange={handleInputChange}
+                  value={values.prizeTokenId}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Select Battle Status"
+                  name="battleStatus"
+                  onChange={handleInputChange}
+                  select
+                  value={values.battleStatus}
+                  variant="outlined"
+                >
+                  {STATUS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item md={6} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>

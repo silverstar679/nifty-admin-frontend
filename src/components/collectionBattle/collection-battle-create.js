@@ -17,9 +17,8 @@ import { createCollectionBattle } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
-import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
-import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
+import { usePolygonNetworkContract, usePolygonContract } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 
 const STATUS = [
@@ -38,7 +37,7 @@ const STATUS = [
 ]
 
 export const CollectionBattleCreate = (props) => {
-  const { account } = useWeb3React()
+  const { active, account, chainId } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
@@ -46,111 +45,29 @@ export const CollectionBattleCreate = (props) => {
     address: '',
     polygonContractAddress: '',
     queueId: '',
+    prizeContractAddress: '',
+    prizeTokenId: '',
     battleStatus: 0,
     tokenIds: '',
   })
-
   const [battleDate, setBattleDate] = useState(new Date(Date.now()).toISOString())
+  const [ownerPolygon, setOwnerPolygon] = useState('')
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
 
-  useEffect(() => {
-    let mounted = true
-
-    async function getABI() {
-      const abi = await fetchEthereumABI(values.address)
-      if (mounted) {
-        setEthereumAbi(abi)
-      }
-    }
-    if (values.address) {
-      getABI()
-    }
-
-    return () => {
-      mounted = false
-    }
-  }, [values.address])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getABI() {
-      const abi = await fetchPolygonABI(values.polygonContractAddress)
-      if (mounted) {
-        setPolygonAbi(abi)
-      }
-    }
-    if (values.polygonContractAddress) {
-      getABI()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [values.polygonContractAddress])
-
-  const ethereumContract = useEthereumNetworkContract(values.address, ethereumAbi, true)
-  const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getCollectionBattleInfo() {
-      Promise.all([ethereumContract.name()]).then(([name]) => {
-        if (mounted) {
-          setValues((prevValues) => ({
-            ...prevValues,
-            name: name.split(':')[1],
-          }))
-        }
-      })
-    }
-    if (ethereumContract && ethereumContract.provider && ethereumAbi.length !== 0) {
-      getCollectionBattleInfo()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [ethereumContract, ethereumAbi])
-
-  useEffect(() => {
-    let mounted = true
-    async function getQueueId() {
-      Promise.all([polygonContract.battleQueueLength()]).then(([queueId]) => {
-        if (mounted) {
-          setValues((prevValues) => ({
-            ...prevValues,
-            queueId: BigNumber.from(queueId).toNumber(),
-          }))
-        }
-      })
-    }
-    if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
-      getQueueId()
-    }
-
-    return () => {
-      mounted = false
-    }
-  }, [polygonContract, polygonAbi])
-
-  const handleInputChange = (event) => {
-    setValues({
-      ...values,
-      [event.target.name]: event.target.value,
-    })
-  }
-
-  const handleBattleDateChange = (newDate) => {
-    setBattleDate(new Date(newDate).toISOString())
-  }
-
-  const handleClose = () => {
+  const connectedToast = () => {
     setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.CONNECTED })
+  }
+
+  const notConnectedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.NOT_CONNECTED_WALLET })
   }
 
   const toastInProgress = () => {
@@ -175,6 +92,95 @@ export const CollectionBattleCreate = (props) => {
     setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
   }
 
+  const incorrectNetwork = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.INCORRECT_NETWORK })
+  }
+
+  const toastCompleted = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+  }
+
+  const toastNotOwner = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+  }
+
+  useEffect(() => {
+    if (active) {
+      connectedToast()
+    } else {
+      notConnectedToast()
+    }
+  }, [active])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function getABI() {
+      const abi = await fetchPolygonABI(values.polygonContractAddress)
+      if (mounted) {
+        setPolygonAbi(abi)
+      }
+    }
+    if (values.polygonContractAddress) {
+      getABI()
+    }
+    return () => {
+      mounted = false
+    }
+  }, [values.polygonContractAddress])
+
+  const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
+  const polygonInjectedContract = usePolygonContract(
+    values.polygonContractAddress,
+    polygonAbi,
+    true
+  )
+
+  useEffect(() => {
+    let mounted = true
+    async function getPolygonInfo() {
+      Promise.all([polygonContract.battleQueueLength(), polygonContract.owner()]).then(
+        ([queueId, ownerAddress]) => {
+          if (mounted) {
+            setValues((prevValues) => ({
+              ...prevValues,
+              queueId: BigNumber.from(queueId).toNumber(),
+            }))
+            setOwnerPolygon(ownerAddress)
+          }
+        }
+      )
+    }
+    if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
+      getPolygonInfo()
+    }
+
+    return () => {
+      mounted = false
+    }
+  }, [polygonContract, polygonAbi])
+
+  const handleInputChange = (event) => {
+    setValues({
+      ...values,
+      [event.target.name]: event.target.value,
+    })
+  }
+
+  const handleBattleDateChange = (newDate) => {
+    setBattleDate(new Date(newDate).toISOString())
+  }
+
+  const handleClose = () => {
+    setIsToast(false)
+  }
+
   const handleCreateCollectionBattle = async () => {
     if (
       account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
@@ -186,6 +192,8 @@ export const CollectionBattleCreate = (props) => {
         battleStatus: values.battleStatus,
         network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
+        prizeContractAddress: values.prizeContractAddress,
+        prizeTokenId: values.prizeTokenId,
         queueId: values.queueId,
         tokenIds: values.tokenIds,
         battleDate,
@@ -200,23 +208,39 @@ export const CollectionBattleCreate = (props) => {
     }
   }
 
+  const handleCreateCollectionBattleContract = async () => {
+    if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
+      if (account === ownerPolygon) {
+        toastInProgress()
+        const tx = await polygonInjectedContract.initializeBattle(
+          values.address,
+          values.prizeContractAddress,
+          values.prizeTokenId
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
+
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       <form autoComplete="off" noValidate {...props}>
         <Card>
-          <CardHeader
-            subheader="The information can be edited"
-            title="New CollectionBattle Details"
-          />
+          <CardHeader title="New Collection Battle Details" />
           <Divider />
           <CardContent>
             <Grid container spacing={3}>
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="CollectionBattle Name"
+                  label="Collection Battle Name"
                   name="name"
                   onChange={handleInputChange}
                   value={values.name}
@@ -250,6 +274,26 @@ export const CollectionBattleCreate = (props) => {
                   name="queueId"
                   onChange={handleInputChange}
                   value={values.queueId}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Contract Address"
+                  name="prizeContractAddress"
+                  onChange={handleInputChange}
+                  value={values.prizeContractAddress}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Token Id"
+                  name="prizeTokenId"
+                  onChange={handleInputChange}
+                  value={values.prizeTokenId}
                   variant="outlined"
                 />
               </Grid>
@@ -290,9 +334,20 @@ export const CollectionBattleCreate = (props) => {
               p: 2,
             }}
           >
-            <Button color="primary" variant="contained" onClick={handleCreateCollectionBattle}>
-              Create CollectionBattle
-            </Button>
+            <Box sx={{ pr: 2 }}>
+              <Button
+                color="primary"
+                variant="contained"
+                onClick={handleCreateCollectionBattleContract}
+              >
+                Initialize Battle on Contract
+              </Button>
+            </Box>
+            <Box>
+              <Button color="primary" variant="contained" onClick={handleCreateCollectionBattle}>
+                Create Battle on DB
+              </Button>
+            </Box>
           </Box>
         </Card>
       </form>

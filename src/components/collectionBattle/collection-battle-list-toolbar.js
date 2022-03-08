@@ -23,12 +23,12 @@ export const CollectionBattleListToolbar = (props) => (
       }}
     >
       <Typography sx={{ m: 1 }} variant="h4">
-        CollectionBattles
+        Collection Battles
       </Typography>
       <Box sx={{ m: 1 }}>
-        <NextLink href="/drops/create">
+        <NextLink href="/collectionBattles/create">
           <Button color="primary" variant="contained">
-            Add CollectionBattle
+            Add Battle
           </Button>
         </NextLink>
       </Box>
@@ -48,7 +48,7 @@ export const CollectionBattleListToolbar = (props) => (
                   </InputAdornment>
                 ),
               }}
-              placeholder="Search drop"
+              placeholder="Search battle"
               variant="outlined"
             />
           </Box>

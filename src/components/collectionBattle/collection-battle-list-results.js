@@ -127,10 +127,10 @@ export const CollectionBattleListResults = () => {
                   <TableCell>No</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>ETH Address</TableCell>
-                  <TableCell>Polygon Address</TableCell>
+                  <TableCell>Poly Address</TableCell>
                   <TableCell>Queue ID</TableCell>
-                  <TableCell>Battle Status</TableCell>
-                  <TableCell>Battle Date</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Date</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -208,7 +208,7 @@ export const CollectionBattleListResults = () => {
         <DialogTitle id="alert-dialog-title">{'Confirm'}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure to delete this collectionBattle permanently?
+            Are you sure to delete this collection Battle permanently?
           </DialogContentText>
         </DialogContent>
         <DialogActions>

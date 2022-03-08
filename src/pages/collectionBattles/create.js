@@ -7,7 +7,7 @@ const CollectionBattleCreatePage = () => {
   return (
     <>
       <Head>
-        <title>CollectionBattle Create | Nifty Royale Admin</title>
+        <title>Battle Create | Nifty Royale Admin</title>
       </Head>
       <Box
         component="main"

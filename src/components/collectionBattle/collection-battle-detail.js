@@ -32,21 +32,17 @@ export const CollectionBattleDetail = (props) => {
     <Box sx={{ width: '100%', typography: 'body1' }}>
       <TabContext value={value}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <TabList onChange={handleChange} aria-label="CollectionBattle Detail Tabs">
-            <Tab label="CollectionBattle Detail Update" value="1" />
-            {collectionBattle &&
-              collectionBattle.address !== '' &&
-              collectionBattle.type !== 'old' && <Tab label="Contract Interaction" value="2" />}
+          <TabList onChange={handleChange} aria-label="Collection Battle Detail Tabs">
+            <Tab label="Collection Battle Detail Update" value="1" />
+            <Tab label="Contract Interaction" value="2" />
           </TabList>
         </Box>
         <TabPanel value="1">
           <CollectionBattleDetailUpdate collectionBattle={collectionBattle} />
         </TabPanel>
-        {collectionBattle && collectionBattle.address !== '' && collectionBattle.type !== 'old' && (
-          <TabPanel value="2">
-            <ContractInteraction collectionBattle={collectionBattle} />
-          </TabPanel>
-        )}
+        <TabPanel value="2">
+          <ContractInteraction collectionBattle={collectionBattle} />
+        </TabPanel>
       </TabContext>
     </Box>
   )
