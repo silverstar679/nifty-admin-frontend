@@ -3,12 +3,7 @@ import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } 
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useWeb3React } from '../../hooks'
-import {
-  useEthereumContract,
-  usePolygonContract,
-  useEthereumNetworkContract,
-  usePolygonNetworkContract,
-} from '../../hooks/useContract'
+import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
@@ -19,9 +14,9 @@ export const ContractInteraction = (props) => {
   const collectionContractAddress = props.collectionBattle && props.collectionBattle.address
   const polygonContractAddress =
     props.collectionBattle && props.collectionBattle.polygonContractAddress
-  const queueId = props.collectionBattle && parseInt(props.collectionBattle.queueId, 10)
+  const queueId = props.collectionBattle && props.collectionBattle.queueId
   const prizeContractAddress = props.collectionBattle && props.collectionBattle.prizeContractAddress
-  const prizeTokenId = props.collectionBattle && parseInt(props.collectionBattle.prizeTokenId, 10)
+  const prizeTokenId = props.collectionBattle && props.collectionBattle.prizeTokenId
   const tokenIds = props.collectionBattle && props.collectionBattle.tokenIds
 
   const [isToast, setIsToast] = useState(false)
@@ -105,7 +100,7 @@ export const ContractInteraction = (props) => {
     }
   }, [polygonContractAddress])
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
-  const ethereumInjectedContractForPrize = useEthereumContract(
+  const ethereumContractForPrize = useEthereumNetworkContract(
     prizeContractAddress,
     ethereumAbiForPrize,
     true
@@ -116,13 +111,11 @@ export const ContractInteraction = (props) => {
     true
   )
 
-  const polygonInjectedContract = usePolygonContract(polygonContractAddress, polygonAbi, true)
-
   useEffect(() => {
     async function getCollectionBattleInfo() {
       if (
-        ethereumInjectedContractForPrize &&
-        ethereumInjectedContractForPrize.provider &&
+        ethereumContractForPrize &&
+        ethereumContractForPrize.provider &&
         ethereumAbiForPrize.length !== 0 &&
         polygonContract &&
         polygonContract.provider &&
@@ -130,7 +123,7 @@ export const ContractInteraction = (props) => {
       ) {
         Promise.all([
           polygonContract.owner(),
-          ethereumInjectedContractForPrize.owner(),
+          ethereumContractForPrize.owner(),
           polygonContract.battleQueue(queueId),
         ]).then(([ownerPolygon, owner, battleInfo]) => {
           setOwnerPolygon(ownerPolygon)
@@ -156,7 +149,7 @@ export const ContractInteraction = (props) => {
         polygonContract.removeListener('BattleEnded')
       }
     }
-  }, [polygonContract, polygonAbi, ethereumInjectedContractForPrize, ethereumAbiForPrize, queueId])
+  }, [polygonContract, polygonAbi, ethereumContractForPrize, ethereumAbiForPrize, queueId])
 
   const toastInProgress = () => {
     setIsToast(false)
@@ -206,11 +199,7 @@ export const ContractInteraction = (props) => {
       if (account === owner) {
         toastInProgress()
         const to = await ethereumContractForCollection.ownerOf(prizeTokenId)
-        const tx = await ethereumInjectedContractForPrize.safeTransferFrom(
-          account,
-          to,
-          winnerTokenId
-        )
+        const tx = await ethereumContractForPrize.safeTransferFrom(account, to, winnerTokenId)
         await tx.wait()
         toastCompleted()
       } else {
@@ -225,7 +214,7 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonInjectedContract.addTokenIds(queueId, tokenIds.split(','))
+        const tx = await polygonContract.addTokenIds(queueId, tokenIds.split(','))
         await tx.wait()
         toastCompleted()
       } else {
@@ -239,11 +228,7 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonInjectedContract.startBattle(
-          queueId,
-          intervalTime,
-          eliminatedTokenCount
-        )
+        const tx = await polygonContract.startBattle(queueId, intervalTime, eliminatedTokenCount)
         await tx.wait()
         toastCompleted()
       } else {
@@ -258,7 +243,7 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonInjectedContract.setBattleIntervalTime(queueId, intervalTime)
+        const tx = await polygonContract.setBattleIntervalTime(queueId, intervalTime)
         await tx.wait()
         toastCompleted()
       } else {
@@ -273,10 +258,7 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonInjectedContract.setEliminatedTokenCount(
-          queueId,
-          eliminatedTokenCount
-        )
+        const tx = await polygonContract.setEliminatedTokenCount(queueId, eliminatedTokenCount)
         await tx.wait()
         toastCompleted()
       } else {
@@ -292,202 +274,191 @@ export const ContractInteraction = (props) => {
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
 
       <Grid container spacing={1}>
-        <Card>
-          <CardHeader title="Prize Contract Functionalities" />
-        </Card>
+        <Grid item md={6}>
+          <Card>
+            <CardHeader title="Prize Contract Functionalities" />
+          </Card>
 
-        <Box sx={{ py: 1 }} />
+          <Box sx={{ py: 1 }} />
 
-        <Card>
-          <CardHeader title="Transfer prize token to the winner" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Winner Token ID"
-              name="winnerTokenId"
-              onChange={handleWinnerTokenIdChange}
-              value={winnerTokenId}
-              variant="outlined"
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={transferToken}>
-              Transfer
-            </Button>
-          </Box>
-        </Card>
-        <Card>
-          <CardHeader
-            title="Polygon Contract Functionalities"
-            subheader="Queue ID and Token IDs must be defined in DB"
-          />
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-        <Card>
-          <CardHeader title="Queue ID" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Queue ID"
-              value={queueId ? queueId : 'Not Set'}
-              variant="outlined"
-            />
-          </CardContent>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Add Token IDs" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Token IDs" value={tokenIds} variant="outlined" />
-              </Grid>
-            </Grid>
-          </CardContent>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={addTokenIds}>
-              Add
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Start Battle" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Interval Time"
-                  name="intervalTime"
-                  type="number"
-                  onChange={handleIntervalTimeChange}
-                  value={intervalTime}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Eliminated Token Count"
-                  name="eliminatedTokenCount"
-                  type="number"
-                  onChange={handleEliminatedTokenCountChange}
-                  value={eliminatedTokenCount}
-                  variant="outlined"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField fullWidth label="Token IDs" value={tokenIds} variant="outlined" />
-              </Grid>
-            </Grid>
-          </CardContent>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button color="primary" variant="contained" onClick={startBattle}>
-              Start
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Interval Time" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Interval Time"
-              name="intervalTime"
-              type="number"
-              onChange={handleIntervalTimeChange}
-              value={intervalTime}
-              variant="outlined"
-              disabled={battleState !== 1 ? true : false}
-            />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={updateIntervalTime}
-              disabled={battleState !== 1 ? true : false}
+          <Card>
+            <CardHeader title="Transfer prize token to the winner" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Winner Token ID"
+                name="winnerTokenId"
+                onChange={handleWinnerTokenIdChange}
+                value={winnerTokenId}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
             >
-              Update
-            </Button>
-          </Box>
-        </Card>
-
-        <Box sx={{ py: 1 }} />
-
-        <Card>
-          <CardHeader title="Set Eliminated Token Count" sx={{ py: 1 }} />
-          <Divider />
-          <CardContent>
-            <TextField
-              fullWidth
-              label="Eliminated Token Count"
-              name="eliminatedTokenCount"
-              type="number"
-              onChange={handleEliminatedTokenCountChange}
-              value={eliminatedTokenCount}
-              variant="outlined"
-              disabled={battleState !== 1 ? true : false}
+              <Button color="primary" variant="contained" onClick={transferToken}>
+                Transfer
+              </Button>
+            </Box>
+          </Card>
+        </Grid>
+        <Grid item md={6}>
+          <Card>
+            <CardHeader
+              title="Polygon Contract Functionalities"
+              subheader="Queue ID and Token IDs must be defined in DB"
             />
-          </CardContent>
-          <Divider />
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'flex-start',
-              p: 2,
-            }}
-          >
-            <Button
-              color="primary"
-              variant="contained"
-              onClick={updateEliminatedTokenCount}
-              disabled={battleState !== 1 ? true : false}
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+          <Card>
+            <CardHeader title="Queue ID" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Queue ID"
+                value={queueId ? queueId : 'Not Set'}
+                variant="outlined"
+              />
+            </CardContent>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Add Token IDs" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField fullWidth label="Token IDs" value={tokenIds} variant="outlined" />
+                </Grid>
+              </Grid>
+            </CardContent>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
             >
-              Update
-            </Button>
-          </Box>
-        </Card>
+              <Button color="primary" variant="contained" onClick={addTokenIds}>
+                Add
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Start Battle" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Interval Time"
+                    name="intervalTime"
+                    type="number"
+                    onChange={handleIntervalTimeChange}
+                    value={intervalTime}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Eliminated Token Count"
+                    name="eliminatedTokenCount"
+                    type="number"
+                    onChange={handleEliminatedTokenCountChange}
+                    value={eliminatedTokenCount}
+                    variant="outlined"
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={startBattle}>
+                Start
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set Interval Time" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Interval Time"
+                name="intervalTime"
+                type="number"
+                onChange={handleIntervalTimeChange}
+                value={intervalTime}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateIntervalTime}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set Eliminated Token Count" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Eliminated Token Count"
+                name="eliminatedTokenCount"
+                type="number"
+                onChange={handleEliminatedTokenCountChange}
+                value={eliminatedTokenCount}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateEliminatedTokenCount}>
+                Update
+              </Button>
+            </Box>
+          </Card>
+        </Grid>
       </Grid>
     </>
   )
