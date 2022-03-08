@@ -11,7 +11,7 @@ import {
 import { Search as SearchIcon } from '../../icons/search'
 import NextLink from 'next/link'
 
-export const WhitelistListToolbar = (props) => (
+export const CollectionListToolbar = (props) => (
   <Box {...props}>
     <Box
       sx={{
@@ -23,12 +23,12 @@ export const WhitelistListToolbar = (props) => (
       }}
     >
       <Typography sx={{ m: 1 }} variant="h4">
-        Whitelists
+        Collections
       </Typography>
       <Box sx={{ m: 1 }}>
-        <NextLink href="/whitelists/create">
+        <NextLink href="/collections/create">
           <Button color="primary" variant="contained">
-            Add Whitelist
+            Add Collection
           </Button>
         </NextLink>
       </Box>
@@ -48,7 +48,7 @@ export const WhitelistListToolbar = (props) => (
                   </InputAdornment>
                 ),
               }}
-              placeholder="Search whitelist"
+              placeholder="Search collection"
               variant="outlined"
             />
           </Box>

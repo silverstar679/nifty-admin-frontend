@@ -5,14 +5,14 @@ import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
 
-export const WhitelistCreate = (props) => {
+export const CollectionCreate = (props) => {
   const { account } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
     name: '',
     address: '',
-    whitelist: '',
+    collection: '',
   })
 
   const [isToast, setIsToast] = useState(false)
@@ -51,7 +51,7 @@ export const WhitelistCreate = (props) => {
     setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
   }
 
-  const handleCreateWhitelist = async () => {
+  const handleCreateCollection = async () => {
     if (
       account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
       account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()
@@ -60,12 +60,12 @@ export const WhitelistCreate = (props) => {
         name: values.name,
         address: values.address,
         network: ethNetwork,
-        whitelist: values.whitelist,
+        collection: values.collection,
         created_at: values.created_at,
       }
       toastInProgress()
-      const createdWhitelist = await createCollection(data)
-      if (!!createdWhitelist) successToast()
+      const createdCollection = await createCollection(data)
+      if (!!createdCollection) successToast()
       else failedToast()
     } else {
       notAdminToast()
@@ -78,14 +78,14 @@ export const WhitelistCreate = (props) => {
 
       <form autoComplete="off" noValidate {...props}>
         <Card>
-          <CardHeader subheader="The information can be edited" title="New Whitelist Details" />
+          <CardHeader subheader="The information can be edited" title="New Collection Details" />
           <Divider />
           <CardContent>
             <Grid container spacing={3}>
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Whitelist Name"
+                  label="Collection Name"
                   name="name"
                   onChange={handleInputChange}
                   value={values.name}
@@ -107,10 +107,10 @@ export const WhitelistCreate = (props) => {
                   fullWidth
                   multiline
                   rows={3}
-                  label="Whitelist Address"
-                  name="whitelist"
+                  label="Collection Address"
+                  name="collection"
                   onChange={handleInputChange}
-                  value={values.whitelist}
+                  value={values.collection}
                   variant="outlined"
                 />
               </Grid>
@@ -124,8 +124,8 @@ export const WhitelistCreate = (props) => {
               p: 2,
             }}
           >
-            <Button color="primary" variant="contained" onClick={handleCreateWhitelist}>
-              Create Whitelist
+            <Button color="primary" variant="contained" onClick={handleCreateCollection}>
+              Create Collection
             </Button>
           </Box>
         </Card>

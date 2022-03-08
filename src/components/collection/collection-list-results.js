@@ -28,7 +28,7 @@ import { getAllCollections, deleteCollection } from '../../services/apis'
 import _ from 'lodash'
 import { useWeb3React } from '../../hooks'
 
-export const WhitelistListResults = () => {
+export const CollectionListResults = () => {
   const { account } = useWeb3React()
 
   const [limit, setLimit] = useState(10)
@@ -39,18 +39,18 @@ export const WhitelistListResults = () => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [whitelists, setWhitelists] = useState([])
+  const [collections, setCollections] = useState([])
 
   useEffect(() => {
     let mounted = true
-    async function getWhitelists() {
-      const whitelists = await getAllCollections()
-      const sortedWhitelists = _.reverse(_.sortBy(whitelists, ['created_at']))
+    async function getCollections() {
+      const collections = await getAllCollections()
+      const sortedCollections = _.reverse(_.sortBy(collections, ['created_at']))
       if (mounted) {
-        setWhitelists(sortedWhitelists)
+        setCollections(sortedCollections)
       }
     }
-    getWhitelists()
+    getCollections()
     return () => {
       mounted = false
     }
@@ -69,7 +69,7 @@ export const WhitelistListResults = () => {
     setIsToast(false)
   }
 
-  const handleDeleteWhitelist = async () => {
+  const handleDeleteCollection = async () => {
     if (
       account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
       account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()
@@ -79,12 +79,12 @@ export const WhitelistListResults = () => {
       setIsToast(false)
       setIsToast(true)
       setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_DELETING })
-      const deletedWhitelist = await deleteCollection(selectedId)
-      if (!!deletedWhitelist) {
-        const filteredWhitelists = _.filter(whitelists, function (o) {
+      const deletedCollection = await deleteCollection(selectedId)
+      if (!!deletedCollection) {
+        const filteredCollections = _.filter(collections, function (o) {
           return o._id !== selectedId
         })
-        setWhitelists(filteredWhitelists)
+        setCollections(filteredCollections)
 
         setIsToast(false)
         setIsToast(true)
@@ -109,7 +109,7 @@ export const WhitelistListResults = () => {
   const handlePageChange = (event, newPage) => {
     setPage(newPage)
   }
-  if (whitelists === []) return null
+  if (collections === []) return null
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -127,15 +127,15 @@ export const WhitelistListResults = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {whitelists.slice(page * limit, page * limit + limit).map((whitelist, index) => (
-                  <TableRow hover key={whitelist._id}>
+                {collections.slice(page * limit, page * limit + limit).map((collection, index) => (
+                  <TableRow hover key={collection._id}>
                     <TableCell>{page * limit + index + 1}</TableCell>
                     <TableCell>
                       <Typography color="textPrimary" variant="body1">
-                        {whitelist.name}
+                        {collection.name}
                       </Typography>
                     </TableCell>
-                    <TableCell>{whitelist.address && displayAddress(whitelist.address)}</TableCell>
+                    <TableCell>{collection.address && displayAddress(collection.address)}</TableCell>
                     <TableCell>
                       <Box
                         sx={{
@@ -145,8 +145,8 @@ export const WhitelistListResults = () => {
                       >
                         <NextLink
                           href={{
-                            pathname: '/whitelists/[id]',
-                            query: { id: whitelist._id },
+                            pathname: '/collections/[id]',
+                            query: { id: collection._id },
                           }}
                         >
                           <IconButton size="small">
@@ -154,7 +154,7 @@ export const WhitelistListResults = () => {
                           </IconButton>
                         </NextLink>
 
-                        <IconButton size="small" onClick={() => handleClickOpen(whitelist._id)}>
+                        <IconButton size="small" onClick={() => handleClickOpen(collection._id)}>
                           <DeleteForeverIcon fontSize="small" color="error" />
                         </IconButton>
                       </Box>
@@ -167,7 +167,7 @@ export const WhitelistListResults = () => {
         </PerfectScrollbar>
         <TablePagination
           component="div"
-          count={whitelists.length}
+          count={collections.length}
           onPageChange={handlePageChange}
           onRowsPerPageChange={handleLimitChange}
           page={page}
@@ -184,12 +184,12 @@ export const WhitelistListResults = () => {
         <DialogTitle id="alert-dialog-title">{'Confirm'}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            Are you sure to delete this whitelist permanently?
+            Are you sure to delete this collection permanently?
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose}>Cancel</Button>
-          <Button onClick={handleDeleteWhitelist} autoFocus>
+          <Button onClick={handleDeleteCollection} autoFocus>
             Ok
           </Button>
         </DialogActions>

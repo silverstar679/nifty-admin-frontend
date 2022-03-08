@@ -1,13 +1,13 @@
 import Head from 'next/head'
 import { Box, Container } from '@mui/material'
-import { WhitelistCreate } from '../../components/whitelist/whitelist-create'
+import { CollectionCreate } from '../../components/collection/collection-create'
 import { DashboardLayout } from '../../components/dashboard-layout'
 
-const WhitelistCreatePage = () => {
+const CollectionCreatePage = () => {
   return (
     <>
       <Head>
-        <title>Whitelist Create | Nifty Royale Admin</title>
+        <title>Collection Create | Nifty Royale Admin</title>
       </Head>
       <Box
         component="main"
@@ -18,13 +18,13 @@ const WhitelistCreatePage = () => {
       >
         <Container maxWidth={false}>
           <Box sx={{ mt: 3 }}>
-            <WhitelistCreate />
+            <CollectionCreate />
           </Box>
         </Container>
       </Box>
     </>
   )
 }
-WhitelistCreatePage.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>
+CollectionCreatePage.getLayout = (page) => <DashboardLayout>{page}</DashboardLayout>
 
-export default WhitelistCreatePage
+export default CollectionCreatePage

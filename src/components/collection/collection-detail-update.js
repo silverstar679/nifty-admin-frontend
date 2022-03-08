@@ -5,15 +5,15 @@ import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
 
-export const WhitelistDetailUpdate = (props) => {
+export const CollectionDetailUpdate = (props) => {
   const { account } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
-    name: props.whitelist.name,
-    address: props.whitelist.address,
-    whitelist: props.whitelist.whitelist,
-    created_at: props.whitelist.created_at,
+    name: props.collection.name,
+    address: props.collection.address,
+    whitelist: props.collection.whitelist,
+    created_at: props.collection.created_at,
   })
 
   const [isToast, setIsToast] = useState(false)
@@ -50,7 +50,7 @@ export const WhitelistDetailUpdate = (props) => {
     setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
   }
 
-  const handleUpdateWhitelist = async () => {
+  const handleUpdateCollection = async () => {
     if (
       account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
       account.toLowerCase() === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT.toLowerCase()
@@ -63,8 +63,8 @@ export const WhitelistDetailUpdate = (props) => {
         created_at: values.created_at,
       }
       toastInProgress()
-      const updatedWhitelist = await updateCollection(props.whitelist._id, data)
-      if (!!updatedWhitelist) successToast()
+      const updatedCollection = await updateCollection(props.collection._id, data)
+      if (!!updatedCollection) successToast()
       else failedToast()
     } else {
       notAdminToast()
@@ -76,7 +76,7 @@ export const WhitelistDetailUpdate = (props) => {
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
       <form autoComplete="off">
         <Card>
-          <CardHeader subheader="The information can be edited" title="Whitelist Details" />
+          <CardHeader subheader="The information can be edited" title="Collection Details" />
           <Divider />
           <CardContent>
             <Grid container spacing={3}>
@@ -122,7 +122,7 @@ export const WhitelistDetailUpdate = (props) => {
               p: 2,
             }}
           >
-            <Button color="primary" variant="contained" onClick={handleUpdateWhitelist}>
+            <Button color="primary" variant="contained" onClick={handleUpdateCollection}>
               Update details
             </Button>
           </Box>

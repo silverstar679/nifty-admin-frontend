@@ -8,7 +8,7 @@ const CollectionBattles = () => {
   return (
     <>
       <Head>
-        <title>CollectionBattles | Nifty Royale Admin</title>
+        <title>Collection Battles | Nifty Royale Admin</title>
       </Head>
       <Box
         component="main"
