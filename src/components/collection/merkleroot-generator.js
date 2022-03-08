@@ -4,17 +4,17 @@ import { MerkleTree } from 'merkletreejs'
 import keccak256 from 'keccak256'
 
 export const MerkleRootGenerator = (props) => {
-  const whitelist = props.whitelist.whitelist.split(',')
+  const collection = props.collection.whitelist.split(',')
   const [merkleroot, setMerkleroot] = useState('')
   useEffect(() => {
     // Hash leaves
-    const leaves = whitelist.map((addr) => keccak256(addr))
+    const leaves = collection.map((addr) => keccak256(addr))
 
     // Create tree
     const merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true })
     const rootHash = `0x${merkleTree.getRoot().toString('hex')}`
     setMerkleroot(rootHash)
-  }, [whitelist])
+  }, [collection])
 
   return (
     <>
