@@ -3,7 +3,12 @@ import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } 
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useWeb3React } from '../../hooks'
-import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
+import {
+  useEthereumNetworkContract,
+  usePolygonNetworkContract,
+  usePolygonContract,
+  useEthereumContract,
+} from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
@@ -16,7 +21,7 @@ export const ContractInteraction = (props) => {
     props.collectionBattle && props.collectionBattle.polygonContractAddress
   const queueId = props.collectionBattle && props.collectionBattle.queueId
   const prizeContractAddress = props.collectionBattle && props.collectionBattle.prizeContractAddress
-  const prizeTokenId = props.collectionBattle && props.collectionBattle.prizeTokenId
+  const prizeTokenId = props.collectionBattle && parseInt(props.collectionBattle.prizeTokenId)
   const tokenIds = props.collectionBattle && props.collectionBattle.tokenIds
 
   const [isToast, setIsToast] = useState(false)
@@ -100,7 +105,13 @@ export const ContractInteraction = (props) => {
     }
   }, [polygonContractAddress])
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
+  const polygonInjectedContract = usePolygonContract(polygonContractAddress, polygonAbi, true)
   const ethereumContractForPrize = useEthereumNetworkContract(
+    prizeContractAddress,
+    ethereumAbiForPrize,
+    true
+  )
+  const ethereumInjectedContractForPrize = useEthereumContract(
     prizeContractAddress,
     ethereumAbiForPrize,
     true
@@ -198,8 +209,8 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
       if (account === owner) {
         toastInProgress()
-        const to = await ethereumContractForCollection.ownerOf(prizeTokenId)
-        const tx = await ethereumContractForPrize.safeTransferFrom(account, to, winnerTokenId)
+        const to = await ethereumContractForCollection.ownerOf(winnerTokenId)
+        const tx = await ethereumInjectedContractForPrize.transferFrom(account, to, prizeTokenId)
         await tx.wait()
         toastCompleted()
       } else {
@@ -214,7 +225,7 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonContract.addTokenIds(queueId, tokenIds.split(','))
+        const tx = await polygonInjectedContract.addTokenIds(queueId, tokenIds.split(','))
         await tx.wait()
         toastCompleted()
       } else {
@@ -228,7 +239,11 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonContract.startBattle(queueId, intervalTime, eliminatedTokenCount)
+        const tx = await polygonInjectedContract.startBattle(
+          queueId,
+          intervalTime,
+          eliminatedTokenCount
+        )
         await tx.wait()
         toastCompleted()
       } else {
@@ -243,7 +258,7 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonContract.setBattleIntervalTime(queueId, intervalTime)
+        const tx = await polygonInjectedContract.setBattleIntervalTime(queueId, intervalTime)
         await tx.wait()
         toastCompleted()
       } else {
@@ -258,7 +273,10 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
       if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonContract.setEliminatedTokenCount(queueId, eliminatedTokenCount)
+        const tx = await polygonInjectedContract.setEliminatedTokenCount(
+          queueId,
+          eliminatedTokenCount
+        )
         await tx.wait()
         toastCompleted()
       } else {
