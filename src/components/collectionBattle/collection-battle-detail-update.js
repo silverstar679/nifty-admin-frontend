@@ -45,7 +45,7 @@ export const CollectionBattleDetailUpdate = (props) => {
     prizeContractAddress: props.collectionBattle.prizeContractAddress,
     prizeTokenId: props.collectionBattle.prizeTokenId,
     battleStatus: props.collectionBattle.battleStatus,
-    tokenIds: props.collectionBattle.tokenIds,
+    tokenIds: props.collectionBattle.tokenIds.join(','),
     created_at: props.collectionBattle.created_at,
   })
 
@@ -103,7 +103,7 @@ export const CollectionBattleDetailUpdate = (props) => {
         queueId: values.queueId,
         prizeContractAddress: values.prizeContractAddress,
         prizeTokenId: values.prizeTokenId,
-        tokenIds: values.tokenIds,
+        tokenIds: values.tokenIds.split(','),
         battleDate,
         created_at: values.created_at,
       }

@@ -22,7 +22,7 @@ export const ContractInteraction = (props) => {
   const queueId = props.collectionBattle && props.collectionBattle.queueId
   const prizeContractAddress = props.collectionBattle && props.collectionBattle.prizeContractAddress
   const prizeTokenId = props.collectionBattle && parseInt(props.collectionBattle.prizeTokenId)
-  const tokenIds = props.collectionBattle && props.collectionBattle.tokenIds
+  const tokenIds = props.collectionBattle && props.collectionBattle.tokenIds.join(',')
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})

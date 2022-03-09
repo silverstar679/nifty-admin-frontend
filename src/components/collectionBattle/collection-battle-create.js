@@ -48,7 +48,7 @@ export const CollectionBattleCreate = (props) => {
     prizeContractAddress: '',
     prizeTokenId: '',
     battleStatus: 0,
-    tokenIds: '',
+    tokenIds: [],
   })
   const [battleDate, setBattleDate] = useState(new Date(Date.now()).toISOString())
   const [ownerPolygon, setOwnerPolygon] = useState('')
