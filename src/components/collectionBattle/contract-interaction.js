@@ -12,6 +12,7 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
+import { updateCollectionBattle } from 'src/services/apis'
 
 export const ContractInteraction = (props) => {
   const { active, account, chainId } = useWeb3React()
@@ -167,6 +168,19 @@ export const ContractInteraction = (props) => {
     setIsToast(true)
     setToastInfo({ severity: SEVERITY.INFO, message: MESSAGE.PROGRESS })
   }
+
+  const successToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.DROP_UPDATED })
+  }
+
+  const failedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.FAILED })
+  }
+
   const incorrectNetwork = () => {
     setIsToast(false)
     setIsToast(true)
@@ -205,14 +219,39 @@ export const ContractInteraction = (props) => {
     }
   }, [active])
 
+  const handleUpdateCollectionBattle = async (data) => {
+    toastInProgress()
+    const updatedCollectionBattle = await updateCollectionBattle(props.collectionBattle._id, data)
+    if (!!updatedCollectionBattle) successToast()
+    else failedToast()
+  }
+
   const transferToken = async () => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
       if (account === owner) {
         toastInProgress()
         const to = await ethereumContractForCollection.ownerOf(winnerTokenId)
-        const tx = await ethereumInjectedContractForPrize.transferFrom(account, to, prizeTokenId)
+        const tx = await ethereumInjectedContractForPrize.safeTransferFrom(
+          account,
+          to,
+          prizeTokenId
+        )
         await tx.wait()
         toastCompleted()
+        const data = {
+          name: props.collectionBattle.name,
+          address: props.collectionBattle.address,
+          polygonContractAddress: props.collectionBattle.polygonContractAddress,
+          queueId: props.collectionBattle.queueId,
+          prizeContractAddress: props.collectionBattle.prizeContractAddress,
+          prizeTokenId: props.collectionBattle.prizeTokenId,
+          battleStatus: '2',
+          network: props.collectionBattle.network,
+          battleDate: props.collectionBattle.battleDate,
+          tokenIds: props.collectionBattle.tokenIds,
+          created_at: props.collectionBattle.created_at,
+        }
+        await handleUpdateCollectionBattle(data)
       } else {
         toastNotOwner()
       }
@@ -246,6 +285,20 @@ export const ContractInteraction = (props) => {
         )
         await tx.wait()
         toastCompleted()
+        const data = {
+          name: props.collectionBattle.name,
+          address: props.collectionBattle.address,
+          polygonContractAddress: props.collectionBattle.polygonContractAddress,
+          queueId: props.collectionBattle.queueId,
+          prizeContractAddress: props.collectionBattle.prizeContractAddress,
+          prizeTokenId: props.collectionBattle.prizeTokenId,
+          battleStatus: '1',
+          network: props.collectionBattle.network,
+          battleDate: props.collectionBattle.battleDate,
+          tokenIds: props.collectionBattle.tokenIds,
+          created_at: props.collectionBattle.created_at,
+        }
+        await handleUpdateCollectionBattle(data)
       } else {
         toastNotOwner()
       }
