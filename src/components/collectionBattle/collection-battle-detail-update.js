@@ -46,9 +46,12 @@ export const CollectionBattleDetailUpdate = (props) => {
     prizeTokenId: props.collectionBattle.prizeTokenId,
     battleStatus: props.collectionBattle.battleStatus,
     tokenIds: props.collectionBattle.tokenIds.join(','),
+    defaultMetadata: props.collectionBattle.defaultMetadata,
+    prizeMetadata: props.collectionBattle.prizeMetadata,
     created_at: props.collectionBattle.created_at,
   })
 
+  const [dropDate, setDropDate] = useState(props.collectionBattle.dropDate)
   const [battleDate, setBattleDate] = useState(props.collectionBattle.battleDate)
 
   const [isToast, setIsToast] = useState(false)
@@ -63,6 +66,10 @@ export const CollectionBattleDetailUpdate = (props) => {
 
   const handleBattleDateChange = (newDate) => {
     setBattleDate(newDate)
+  }
+
+  const handleDropDateChange = (newDate) => {
+    setDropDate(newDate)
   }
 
   const handleClose = () => {
@@ -103,7 +110,10 @@ export const CollectionBattleDetailUpdate = (props) => {
         queueId: values.queueId,
         prizeContractAddress: values.prizeContractAddress,
         prizeTokenId: values.prizeTokenId,
+        defaultMetadata: values.defaultMetadata,
+        prizeMetadata: values.prizeMetadata,
         tokenIds: values.tokenIds.split(','),
+        dropDate,
         battleDate,
         created_at: values.created_at,
       }
@@ -189,6 +199,47 @@ export const CollectionBattleDetailUpdate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
+                  label="Default Token Metadata"
+                  name="defaultMetadata"
+                  onChange={handleInputChange}
+                  value={values.defaultMetadata}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Token Metadata"
+                  name="prizeMetadata"
+                  onChange={handleInputChange}
+                  value={values.prizeMetadata}
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item md={6} xs={12}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DateTimePicker
+                    label="Drop Date"
+                    value={dropDate}
+                    onChange={handleDropDateChange}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DateTimePicker
+                    label="Battle Date"
+                    value={battleDate}
+                    onChange={handleBattleDateChange}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
                   label="Select Battle Status"
                   name="battleStatus"
                   onChange={handleInputChange}
@@ -203,16 +254,7 @@ export const CollectionBattleDetailUpdate = (props) => {
                   ))}
                 </TextField>
               </Grid>
-              <Grid item md={6} xs={12}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DateTimePicker
-                    label="Battle Date"
-                    value={battleDate}
-                    onChange={handleBattleDateChange}
-                    renderInput={(params) => <TextField {...params} />}
-                  />
-                </LocalizationProvider>
-              </Grid>
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
