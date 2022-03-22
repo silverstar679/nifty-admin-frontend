@@ -36,8 +36,8 @@ export const ContractInteraction = (props) => {
   const [ownerPolygon, setOwnerPolygon] = useState('')
   const [winnerTokenId, setWinnerTokenId] = useState(0)
 
-  const [intervalTime, setIntervalTime] = useState(0)
-  const [eliminatedTokenCount, setEliminatedTokenCount] = useState(0)
+  const [intervalTime, setIntervalTime] = useState(1)
+  const [eliminatedTokenCount, setEliminatedTokenCount] = useState(1)
 
   const handleClose = () => {
     setIsToast(false)
@@ -140,8 +140,16 @@ export const ContractInteraction = (props) => {
         ]).then(([ownerPolygon, owner, battleInfo]) => {
           setOwnerPolygon(ownerPolygon)
           setOwner(owner)
-          setIntervalTime(BigNumber.from(battleInfo.intervalTime).toNumber())
-          setEliminatedTokenCount(BigNumber.from(battleInfo.eliminatedTokenCount).toNumber())
+          setIntervalTime(
+            BigNumber.from(battleInfo.intervalTime).toNumber() === 0
+              ? 1
+              : BigNumber.from(battleInfo.intervalTime).toNumber()
+          )
+          setEliminatedTokenCount(
+            BigNumber.from(battleInfo.eliminatedTokenCount).toNumber() === 0
+              ? 1
+              : BigNumber.from(battleInfo.eliminatedTokenCount).toNumber()
+          )
           setBattleState(battleInfo.battleState)
           setWinnerTokenId(battleInfo.winnerTokenId)
         })
@@ -231,11 +239,7 @@ export const ContractInteraction = (props) => {
       if (account === owner) {
         toastInProgress()
         const to = await ethereumContractForCollection.ownerOf(winnerTokenId)
-        const tx = await ethereumInjectedContractForPrize.safeTransferFrom(
-          account,
-          to,
-          prizeTokenId
-        )
+        const tx = await ethereumInjectedContractForPrize.transferFrom(account, to, prizeTokenId)
         await tx.wait()
         toastCompleted()
         const data = {
