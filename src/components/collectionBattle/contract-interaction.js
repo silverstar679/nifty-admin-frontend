@@ -263,6 +263,20 @@ export const ContractInteraction = (props) => {
       incorrectNetwork()
     }
   }
+  const flipPublicSaleState = async () => {
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContractForPrize.flipIsPublicSaleState()
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
 
   const addTokenIds = async () => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
@@ -379,6 +393,25 @@ export const ContractInteraction = (props) => {
             >
               <Button color="primary" variant="contained" onClick={transferToken}>
                 Transfer
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Flip Public Sale Status" sx={{ py: 1 }} />
+            <Divider />
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={flipPublicSaleState}>
+                Flip
               </Button>
             </Box>
           </Card>
