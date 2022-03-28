@@ -14,7 +14,7 @@ import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { updateDrop } from 'src/services/apis'
 
-export const ContractInteraction = (props) => {
+export const ERC721AContractInteraction = (props) => {
   const { active, account, chainId } = useWeb3React()
 
   const dropContractAddress = props.drop && props.drop.address
