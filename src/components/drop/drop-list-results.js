@@ -31,12 +31,15 @@ import _ from 'lodash'
 import { useWeb3React } from '../../hooks'
 
 const TYPES = {
-  old: 'Old Version',
-  replace: 'Battle Royale',
-  noPrize: 'Battle Royale No Prize',
-  mint: 'Battle Royale Minting New',
-  random: 'Battle Royale Random Part',
+  old: 'Old',
+  replace: 'Replace Prize',
+  noPrize: 'External Prize',
+  mint: 'Minting Prize',
+  random: 'Random',
+  erc721a: 'ERC721A',
 }
+
+const STATUS = ['Initialized', 'Started', 'Ended']
 
 export const DropListResults = () => {
   const { account } = useWeb3React()
@@ -132,13 +135,12 @@ export const DropListResults = () => {
                 <TableRow>
                   <TableCell>No</TableCell>
                   <TableCell>Name</TableCell>
-                  <TableCell>ETH Address</TableCell>
-                  <TableCell>Polygon Address</TableCell>
-                  <TableCell>Queue ID</TableCell>
                   <TableCell>Type</TableCell>
                   <TableCell>Drop Status</TableCell>
                   <TableCell>Battle Status</TableCell>
                   <TableCell>Drop Date</TableCell>
+                  <TableCell>Battle Date</TableCell>
+                  <TableCell>Status</TableCell>
                   <TableCell>Actions</TableCell>
                 </TableRow>
               </TableHead>
@@ -151,11 +153,11 @@ export const DropListResults = () => {
                         {drop.name}
                       </Typography>
                     </TableCell>
-                    <TableCell>{drop.address && displayAddress(drop.address)}</TableCell>
-                    <TableCell>
+                    {/* <TableCell>{drop.address && displayAddress(drop.address)}</TableCell> */}
+                    {/* <TableCell>
                       {drop.polygonContractAddress && displayAddress(drop.polygonContractAddress)}
                     </TableCell>
-                    <TableCell>{drop.queueId}</TableCell>
+                    <TableCell>{drop.queueId}</TableCell> */}
                     <TableCell>{TYPES[drop.type]}</TableCell>
                     <TableCell>
                       {drop.isDropEnded
@@ -172,6 +174,8 @@ export const DropListResults = () => {
                         : 'New'}
                     </TableCell>
                     <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
+                    <TableCell>{format(new Date(drop.battleDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
+                    <TableCell>{STATUS[drop.battleStatus]}</TableCell>
                     <TableCell>
                       <Box
                         sx={{

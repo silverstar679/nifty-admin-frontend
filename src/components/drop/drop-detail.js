@@ -4,6 +4,7 @@ import TabContext from '@mui/lab/TabContext'
 import TabList from '@mui/lab/TabList'
 import TabPanel from '@mui/lab/TabPanel'
 import { ContractInteraction } from './contract-interaction'
+import { ERC721AContractInteraction } from './erc721a-contract-interaction'
 import { DropDetailUpdate } from './drop-detail-update'
 import { getAllDrops } from '../../services/apis'
 import _ from 'lodash'
@@ -34,17 +35,25 @@ export const DropDetail = (props) => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList onChange={handleChange} aria-label="Drop Detail Tabs">
             <Tab label="Drop Detail Update" value="1" />
-            {drop && drop.address !== '' && drop.type !== 'old' && (
+            {drop && drop.address !== '' && drop.type !== 'old' && drop.type !== 'erc721' && (
               <Tab label="Contract Interaction" value="2" />
+            )}
+            {drop && drop.address !== '' && drop.type === 'erc721a' && (
+              <Tab label="Contract Interaction" value="3" />
             )}
           </TabList>
         </Box>
         <TabPanel value="1">
           <DropDetailUpdate drop={drop} />
         </TabPanel>
-        {drop && drop.address !== '' && drop.type !== 'old' && (
+        {drop && drop.address !== '' && drop.type !== 'old' && drop.type !== 'erc721' && (
           <TabPanel value="2">
             <ContractInteraction drop={drop} />
+          </TabPanel>
+        )}
+        {drop && drop.address !== '' && drop.type === 'erc721' && (
+          <TabPanel value="2">
+            <ERC721AContractInteraction drop={drop} />
           </TabPanel>
         )}
       </TabContext>

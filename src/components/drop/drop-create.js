@@ -24,46 +24,73 @@ import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
-import { useEthereumNetworkContract, usePolygonNetworkContract } from '../../hooks/useContract'
+import {
+  useEthereumNetworkContract,
+  usePolygonNetworkContract,
+  usePolygonContract,
+} from '../../hooks/useContract'
 import { BigNumber } from '@ethersproject/bignumber'
 
 const types = [
   {
     value: 'replace',
-    label: 'Battle Royale',
+    label: 'Replace Prize',
   },
   {
     value: 'noPrize',
-    label: 'Battle Royale No Prize',
+    label: 'External Prize',
   },
   {
     value: 'mint',
-    label: 'Battle Royale Minting New',
+    label: 'Minting Prize',
   },
   {
     value: 'random',
-    label: 'Battle Royale Random Part',
+    label: 'Random',
+  },
+  {
+    value: 'erc721a',
+    label: 'ERC721A',
+  },
+]
+
+const STATUS = [
+  {
+    value: 0,
+    label: 'Initialized',
+  },
+  {
+    value: 1,
+    label: 'Started',
+  },
+  {
+    value: 2,
+    label: 'Ended',
   },
 ]
 
 export const DropCreate = (props) => {
-  const { account } = useWeb3React()
+  const { active, account, chainId } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
   const [values, setValues] = useState({
-    name: '',
-    artist: '',
-    creator: '',
     address: '',
+    polygonContractAddress: '',
+    queueId: '',
+    prizeContractAddress: '',
+    prizeTokenId: '',
+    battleStatus: '0',
+    tokenIds: [],
     defaultMetadata: '',
     prizeMetadata: '',
     defaultNFTUri: '',
     battleMessage: '',
+    name: '',
+    artist: '',
+    creator: '',
     description: '',
     prizeDescription: '',
-    polygonContractAddress: '',
-    queueId: '',
-    type: 'replace',
+    type: 'erc721a',
     threshold: '',
     previewMedia: '',
   })
@@ -81,6 +108,7 @@ export const DropCreate = (props) => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
+  const [ownerPolygon, setOwnerPolygon] = useState('')
   const [ethereumAbi, setEthereumAbi] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
 
@@ -121,6 +149,11 @@ export const DropCreate = (props) => {
 
   const ethereumContract = useEthereumNetworkContract(values.address, ethereumAbi, true)
   const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
+  const polygonInjectedContract = usePolygonContract(
+    values.polygonContractAddress,
+    polygonAbi,
+    true
+  )
 
   useEffect(() => {
     let mounted = true
@@ -148,14 +181,17 @@ export const DropCreate = (props) => {
   useEffect(() => {
     let mounted = true
     async function getQueueId() {
-      Promise.all([polygonContract.battleQueueLength()]).then(([queueId]) => {
-        if (mounted) {
-          setValues((prevValues) => ({
-            ...prevValues,
-            queueId: BigNumber.from(queueId).toNumber(),
-          }))
+      Promise.all([polygonContract.battleQueueLength(), polygonContract.owner()]).then(
+        ([queueId, ownerAddress]) => {
+          if (mounted) {
+            setValues((prevValues) => ({
+              ...prevValues,
+              queueId: BigNumber.from(queueId).toNumber(),
+            }))
+            setOwnerPolygon(ownerAddress)
+          }
         }
-      })
+      )
     }
     if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
       getQueueId()
@@ -214,6 +250,44 @@ export const DropCreate = (props) => {
     setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_ADMIN })
   }
 
+  const incorrectNetwork = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.INCORRECT_NETWORK })
+  }
+
+  const toastCompleted = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.COMPLETED })
+  }
+
+  const toastNotOwner = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.WARNING, message: MESSAGE.NOT_OWNER })
+  }
+
+  const connectedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.SUCCESS, message: MESSAGE.CONNECTED })
+  }
+
+  const notConnectedToast = () => {
+    setIsToast(false)
+    setIsToast(true)
+    setToastInfo({ severity: SEVERITY.ERROR, message: MESSAGE.NOT_CONNECTED_WALLET })
+  }
+
+  useEffect(() => {
+    if (active) {
+      connectedToast()
+    } else {
+      notConnectedToast()
+    }
+  }, [active])
+
   const handleCreateDrop = async () => {
     if (
       account.toLowerCase() === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT.toLowerCase() ||
@@ -228,6 +302,10 @@ export const DropCreate = (props) => {
         network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
+        prizeContractAddress: values.prizeContractAddress,
+        prizeTokenId: values.prizeTokenId,
+        tokenIds: values.tokenIds,
+        battleStatus: values.battleStatus,
         battleMessage: values.battleMessage,
         description: values.description,
         prizeDescription: values.prizeDescription,
@@ -255,6 +333,25 @@ export const DropCreate = (props) => {
     }
   }
 
+  const handleCreateDropContract = async () => {
+    if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
+      if (account === ownerPolygon) {
+        toastInProgress()
+        const tx = await polygonInjectedContract.initializeBattle(
+          values.address,
+          values.prizeContractAddress,
+          values.prizeTokenId
+        )
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
+
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -265,6 +362,16 @@ export const DropCreate = (props) => {
           <Divider />
           <CardContent>
             <Grid container spacing={3}>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Ethereum Contract Address"
+                  name="address"
+                  onChange={handleInputChange}
+                  value={values.address}
+                  variant="outlined"
+                />
+              </Grid>
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
@@ -295,16 +402,7 @@ export const DropCreate = (props) => {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Ethereum Contract Address"
-                  name="address"
-                  onChange={handleInputChange}
-                  value={values.address}
-                  variant="outlined"
-                />
-              </Grid>
+
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
@@ -328,6 +426,52 @@ export const DropCreate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
+                  label="Prize Contract Address"
+                  name="prizeContractAddress"
+                  onChange={handleInputChange}
+                  value={values.prizeContractAddress}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Token Id"
+                  name="prizeTokenId"
+                  onChange={handleInputChange}
+                  value={values.prizeTokenId}
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Default Token Metadata"
+                  name="defaultMetadata"
+                  onChange={handleInputChange}
+                  value={values.defaultMetadata}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Prize Token Metadata"
+                  name="prizeMetadata"
+                  onChange={handleInputChange}
+                  value={values.prizeMetadata}
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
                   label="Select Battle Type"
                   name="type"
                   onChange={handleInputChange}
@@ -345,12 +489,19 @@ export const DropCreate = (props) => {
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Minimum NFT counts to start battle"
-                  name="threshold"
+                  label="Select Battle Status"
+                  name="battleStatus"
                   onChange={handleInputChange}
-                  value={values.threshold}
+                  select
+                  value={values.battleStatus}
                   variant="outlined"
-                />
+                >
+                  {STATUS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item md={6} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -404,6 +555,17 @@ export const DropCreate = (props) => {
                   />
                 </FormGroup>
               </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Minimum NFT counts to start battle"
+                  name="threshold"
+                  onChange={handleInputChange}
+                  value={values.threshold}
+                  variant="outlined"
+                />
+              </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -418,9 +580,9 @@ export const DropCreate = (props) => {
                 <TextField
                   fullWidth
                   multiline
+                  rows={1}
                   label="Battle Message"
                   name="battleMessage"
-                  rows={1}
                   onChange={handleInputChange}
                   value={values.battleMessage}
                   variant="outlined"
@@ -430,9 +592,9 @@ export const DropCreate = (props) => {
                 <TextField
                   fullWidth
                   multiline
+                  rows={3}
                   label="Description"
                   name="description"
-                  rows={3}
                   onChange={handleInputChange}
                   value={values.description}
                   variant="outlined"
@@ -474,9 +636,16 @@ export const DropCreate = (props) => {
               p: 2,
             }}
           >
-            <Button color="primary" variant="contained" onClick={handleCreateDrop}>
-              Create Drop
-            </Button>
+            <Box sx={{ pr: 2 }}>
+              <Button color="primary" variant="contained" onClick={handleCreateDropContract}>
+                Initialize Battle on Polygon Contract
+              </Button>
+            </Box>
+            <Box>
+              <Button color="primary" variant="contained" onClick={handleCreateDrop}>
+                Create Drop
+              </Button>
+            </Box>
           </Box>
         </Card>
       </form>

@@ -47,7 +47,7 @@ export const CollectionBattleCreate = (props) => {
     queueId: '',
     prizeContractAddress: '',
     prizeTokenId: '',
-    battleStatus: 0,
+    battleStatus: '0',
     tokenIds: [],
     defaultMetadata: '',
     prizeMetadata: '',

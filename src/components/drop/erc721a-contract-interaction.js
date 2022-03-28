@@ -12,29 +12,29 @@ import {
 import { BigNumber } from '@ethersproject/bignumber'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
-import { updateCollectionBattle } from 'src/services/apis'
+import { updateDrop } from 'src/services/apis'
 
 export const ContractInteraction = (props) => {
   const { active, account, chainId } = useWeb3React()
 
-  const collectionContractAddress = props.collectionBattle && props.collectionBattle.address
-  const polygonContractAddress =
-    props.collectionBattle && props.collectionBattle.polygonContractAddress
-  const queueId = props.collectionBattle && props.collectionBattle.queueId
-  const prizeContractAddress = props.collectionBattle && props.collectionBattle.prizeContractAddress
-  const prizeTokenId = props.collectionBattle && parseInt(props.collectionBattle.prizeTokenId)
-  const tokenIds = props.collectionBattle && props.collectionBattle.tokenIds.join(',')
+  const dropContractAddress = props.drop && props.drop.address
+  const polygonContractAddress = props.drop && props.drop.polygonContractAddress
+  const queueId = props.drop && props.drop.queueId
+  const prizeContractAddress = props.drop && props.drop.prizeContractAddress
+  const prizeTokenId = props.drop && parseInt(props.drop.prizeTokenId)
+  const tokenIds = props.drop && props.drop.tokenIds.join(',')
 
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
   const [ethereumAbiForPrize, setEthereumAbiForPrize] = useState([])
-  const [ethereumAbiForCollection, setEthereumAbiForCollection] = useState([])
+  const [ethereumAbiForBase, setEthereumAbiForBase] = useState([])
   const [polygonAbi, setPolygonAbi] = useState([])
   const [battleState, setBattleState] = useState(null)
   const [owner, setOwner] = useState('')
   const [ownerPolygon, setOwnerPolygon] = useState('')
   const [winnerTokenId, setWinnerTokenId] = useState(0)
+  const [baseUri, setBaseUri] = useState('')
 
   const [intervalTime, setIntervalTime] = useState(1)
   const [eliminatedTokenCount, setEliminatedTokenCount] = useState(1)
@@ -45,6 +45,10 @@ export const ContractInteraction = (props) => {
 
   const handleWinnerTokenIdChange = (event) => {
     setWinnerTokenId(event.target.value)
+  }
+
+  const handleBaseUriChange = (event) => {
+    setBaseUri(event.target.value)
   }
 
   const handleIntervalTimeChange = (event) => {
@@ -75,19 +79,19 @@ export const ContractInteraction = (props) => {
   useEffect(() => {
     let mounted = true
     async function getABI() {
-      const abi = await fetchEthereumABI(collectionContractAddress)
+      const abi = await fetchEthereumABI(dropContractAddress)
       if (mounted) {
-        setEthereumAbiForCollection(abi)
+        setEthereumAbiForBase(abi)
       }
     }
-    if (collectionContractAddress) {
+    if (dropContractAddress) {
       getABI()
     }
 
     return () => {
       mounted = false
     }
-  }, [collectionContractAddress])
+  }, [dropContractAddress])
 
   useEffect(() => {
     let mounted = true
@@ -117,14 +121,19 @@ export const ContractInteraction = (props) => {
     ethereumAbiForPrize,
     true
   )
-  const ethereumContractForCollection = useEthereumNetworkContract(
-    collectionContractAddress,
-    ethereumAbiForCollection,
+  const ethereumInjectedContractForBase = useEthereumContract(
+    dropContractAddress,
+    ethereumAbiForBase,
+    true
+  )
+  const ethereumContractForBase = useEthereumNetworkContract(
+    dropContractAddress,
+    ethereumAbiForBase,
     true
   )
 
   useEffect(() => {
-    async function getCollectionBattleInfo() {
+    async function getDropInfo() {
       if (
         ethereumContractForPrize &&
         ethereumContractForPrize.provider &&
@@ -162,7 +171,7 @@ export const ContractInteraction = (props) => {
         })
       }
     }
-    getCollectionBattleInfo()
+    getDropInfo()
 
     return () => {
       if (polygonContract && polygonContract.provider) {
@@ -227,10 +236,10 @@ export const ContractInteraction = (props) => {
     }
   }, [active])
 
-  const handleUpdateCollectionBattle = async (data) => {
+  const handleUpdateDrop = async (data) => {
     toastInProgress()
-    const updatedCollectionBattle = await updateCollectionBattle(props.collectionBattle._id, data)
-    if (!!updatedCollectionBattle) successToast()
+    const updatedDrop = await updateDrop(props.drop._id, data)
+    if (!!updatedDrop) successToast()
     else failedToast()
   }
 
@@ -238,24 +247,24 @@ export const ContractInteraction = (props) => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
       if (account === owner) {
         toastInProgress()
-        const to = await ethereumContractForCollection.ownerOf(winnerTokenId)
+        const to = await ethereumContractForBase.ownerOf(winnerTokenId)
         const tx = await ethereumInjectedContractForPrize.transferFrom(account, to, prizeTokenId)
         await tx.wait()
         toastCompleted()
         const data = {
-          name: props.collectionBattle.name,
-          address: props.collectionBattle.address,
-          polygonContractAddress: props.collectionBattle.polygonContractAddress,
-          queueId: props.collectionBattle.queueId,
-          prizeContractAddress: props.collectionBattle.prizeContractAddress,
-          prizeTokenId: props.collectionBattle.prizeTokenId,
+          name: props.drop.name,
+          address: props.drop.address,
+          polygonContractAddress: props.drop.polygonContractAddress,
+          queueId: props.drop.queueId,
+          prizeContractAddress: props.drop.prizeContractAddress,
+          prizeTokenId: props.drop.prizeTokenId,
           battleStatus: '2',
-          network: props.collectionBattle.network,
-          battleDate: props.collectionBattle.battleDate,
-          tokenIds: props.collectionBattle.tokenIds,
-          created_at: props.collectionBattle.created_at,
+          network: props.drop.network,
+          battleDate: props.drop.battleDate,
+          tokenIds: props.drop.tokenIds,
+          created_at: props.drop.created_at,
         }
-        await handleUpdateCollectionBattle(data)
+        await handleUpdateDrop(data)
       } else {
         toastNotOwner()
       }
@@ -268,6 +277,21 @@ export const ContractInteraction = (props) => {
       if (account === owner) {
         toastInProgress()
         const tx = await ethereumInjectedContractForPrize.flipIsPublicSaleState()
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
+
+  const updateBaseUri = async () => {
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContractForBase.setBaseURI(baseUri, true)
         await tx.wait()
         toastCompleted()
       } else {
@@ -304,19 +328,19 @@ export const ContractInteraction = (props) => {
         await tx.wait()
         toastCompleted()
         const data = {
-          name: props.collectionBattle.name,
-          address: props.collectionBattle.address,
-          polygonContractAddress: props.collectionBattle.polygonContractAddress,
-          queueId: props.collectionBattle.queueId,
-          prizeContractAddress: props.collectionBattle.prizeContractAddress,
-          prizeTokenId: props.collectionBattle.prizeTokenId,
+          name: props.drop.name,
+          address: props.drop.address,
+          polygonContractAddress: props.drop.polygonContractAddress,
+          queueId: props.drop.queueId,
+          prizeContractAddress: props.drop.prizeContractAddress,
+          prizeTokenId: props.drop.prizeTokenId,
           battleStatus: '1',
-          network: props.collectionBattle.network,
-          battleDate: props.collectionBattle.battleDate,
-          tokenIds: props.collectionBattle.tokenIds,
-          created_at: props.collectionBattle.created_at,
+          network: props.drop.network,
+          battleDate: props.drop.battleDate,
+          tokenIds: props.drop.tokenIds,
+          created_at: props.drop.created_at,
         }
-        await handleUpdateCollectionBattle(data)
+        await handleUpdateDrop(data)
       } else {
         toastNotOwner()
       }
@@ -383,6 +407,34 @@ export const ContractInteraction = (props) => {
             >
               <Button color="primary" variant="contained" onClick={flipPublicSaleState}>
                 Flip
+              </Button>
+            </Box>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+          <Card>
+            <CardHeader title="Set Base URI" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="Base URI"
+                name="baseUri"
+                onChange={handleBaseUriChange}
+                value={baseUri}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updateBaseUri}>
+                Update
               </Button>
             </Box>
           </Card>

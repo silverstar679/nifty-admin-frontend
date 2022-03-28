@@ -22,26 +22,46 @@ import { updateDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
+
 const types = [
   {
     value: 'old',
-    label: 'Old Version',
-  },
-  {
-    value: 'noPrize',
-    label: 'Battle Royale No Prize',
+    label: 'Old',
   },
   {
     value: 'replace',
-    label: 'Battle Royale',
+    label: 'Replace Prize',
   },
   {
     value: 'mint',
-    label: 'Battle Royale Minting New',
+    label: 'Minting Prize',
+  },
+  {
+    value: 'noPrize',
+    label: 'External Prize',
   },
   {
     value: 'random',
-    label: 'Battle Royale Random Part',
+    label: 'Random',
+  },
+  {
+    value: 'erc721a',
+    label: 'ERC721A',
+  },
+]
+
+const STATUS = [
+  {
+    value: '0',
+    label: 'Initialized',
+  },
+  {
+    value: '1',
+    label: 'Started',
+  },
+  {
+    value: '2',
+    label: 'Ended',
   },
 ]
 
@@ -57,6 +77,10 @@ export const DropDetailUpdate = (props) => {
     type: props.drop.type,
     polygonContractAddress: props.drop.polygonContractAddress,
     queueId: props.drop.queueId,
+    prizeContractAddress: props.drop.prizeContractAddress,
+    prizeTokenId: props.drop.prizeTokenId,
+    battleStatus: props.drop.battleStatus ? props.drop.battleStatus : '0',
+    tokenIds: props.drop.tokenIds.join(','),
     defaultMetadata: props.drop.defaultMetadata,
     prizeMetadata: props.drop.prizeMetadata,
     defaultNFTUri: props.drop.defaultNFTUri,
@@ -141,6 +165,10 @@ export const DropDetailUpdate = (props) => {
         network: ethNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
+        prizeContractAddress: values.prizeContractAddress,
+        prizeTokenId: values.prizeTokenId,
+        tokenIds: values.tokenIds.split(','),
+        battleStatus: values.battleStatus,
         battleMessage: values.battleMessage,
         description: values.description,
         prizeDescription: values.prizeDescription,
@@ -188,23 +216,38 @@ export const DropDetailUpdate = (props) => {
                   variant="outlined"
                 />
               </Grid>
+
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
-                  label="Select Battle Type"
-                  name="type"
+                  label="Drop Name"
+                  name="name"
                   onChange={handleInputChange}
-                  select
-                  value={values.type}
+                  value={values.name}
                   variant="outlined"
-                >
-                  {types.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                />
               </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Creator Name"
+                  name="creator"
+                  onChange={handleInputChange}
+                  value={values.creator}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Artist Name"
+                  name="artist"
+                  onChange={handleInputChange}
+                  value={values.artist}
+                  variant="outlined"
+                />
+              </Grid>
+
               <Grid item md={6} xs={12}>
                 <TextField
                   fullWidth
@@ -222,6 +265,26 @@ export const DropDetailUpdate = (props) => {
                   name="queueId"
                   onChange={handleInputChange}
                   value={values.queueId}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Contract Address"
+                  name="prizeContractAddress"
+                  onChange={handleInputChange}
+                  value={values.prizeContractAddress}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Prize Token Id"
+                  name="prizeTokenId"
+                  onChange={handleInputChange}
+                  value={values.prizeTokenId}
                   variant="outlined"
                 />
               </Grid>
@@ -291,16 +354,7 @@ export const DropDetailUpdate = (props) => {
                   />
                 </FormGroup>
               </Grid>
-              <Grid item md={6} xs={12}>
-                <TextField
-                  fullWidth
-                  label="Minimum NFT counts to start battle"
-                  name="threshold"
-                  onChange={handleInputChange}
-                  value={values.threshold}
-                  variant="outlined"
-                />
-              </Grid>
+
               <Grid item md={6} xs={12}>
                 <Box
                   sx={{
@@ -317,6 +371,88 @@ export const DropDetailUpdate = (props) => {
                   />
                   <Typography>Image ** Default NFT Media File Type</Typography>
                 </Box>
+              </Grid>
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Select Battle Type"
+                  name="type"
+                  onChange={handleInputChange}
+                  select
+                  value={values.type}
+                  variant="outlined"
+                >
+                  {types.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+
+              <Grid item md={6} xs={12}>
+                <TextField
+                  fullWidth
+                  label="Select Battle Status"
+                  name="battleStatus"
+                  onChange={handleInputChange}
+                  select
+                  value={values.battleStatus}
+                  variant="outlined"
+                >
+                  {STATUS.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      {option.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Default Token Metadata"
+                  name="defaultMetadata"
+                  onChange={handleInputChange}
+                  value={values.defaultMetadata}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  label="Prize Token Metadata"
+                  name="prizeMetadata"
+                  onChange={handleInputChange}
+                  value={values.prizeMetadata}
+                  variant="outlined"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Token ids"
+                  name="tokenIds"
+                  rows={3}
+                  onChange={handleInputChange}
+                  value={values.tokenIds}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Minimum NFT counts to start battle"
+                  name="threshold"
+                  onChange={handleInputChange}
+                  value={values.threshold}
+                  variant="outlined"
+                />
               </Grid>
               <Grid item xs={12}>
                 <TextField
