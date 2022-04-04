@@ -19,16 +19,16 @@ const items = [
     icon: <ShoppingBagIcon fontSize="small" />,
     title: 'Drops',
   },
-  {
-    href: '/collections',
-    icon: <UserIcon fontSize="small" />,
-    title: 'Collections',
-  },
-  {
-    href: '/collectionBattles',
-    icon: <UserIcon fontSize="small" />,
-    title: 'Collection Battles',
-  },
+  // {
+  //   href: '/collections',
+  //   icon: <UserIcon fontSize="small" />,
+  //   title: 'Collections',
+  // },
+  // {
+  //   href: '/collectionBattles',
+  //   icon: <UserIcon fontSize="small" />,
+  //   title: 'Collection Battles',
+  // },
 ]
 
 export const DashboardSidebar = (props) => {
