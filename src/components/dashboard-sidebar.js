@@ -90,6 +90,8 @@ export const DashboardSidebar = (props) => {
                 <Typography color="neutral.400" variant="body2">
                   {process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1'
                     ? 'Mainnet Version'
+                    : process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137'
+                    ? 'Polygon version'
                     : 'Rinkeby Version'}
                 </Typography>
               </div>
