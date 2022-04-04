@@ -2,11 +2,16 @@ import axios from 'axios'
 
 const network =
   process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
+const polygonNetwork =
+  process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? 'polygon' : 'mumbai'
+
 const baseURL = `https://api-admin.niftyroyale.com`
 
 export async function getAllDrops() {
   try {
-    const response = await axios.get(`${baseURL}/drops?network=${network}`)
+    const response = await axios.get(
+      `${baseURL}/drops?network=${network}&polygonNetwork=${polygonNetwork}`
+    )
     return response.data
   } catch (error) {
     console.error(error)

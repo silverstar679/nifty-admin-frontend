@@ -69,6 +69,8 @@ export const DropDetailUpdate = (props) => {
   const { account } = useWeb3React()
   const ethNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
+  const polyNetwork =
+    process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? 'polygon' : 'mumbai'
   const [values, setValues] = useState({
     name: props.drop.name,
     artist: props.drop.artist,
@@ -163,6 +165,7 @@ export const DropDetailUpdate = (props) => {
         address: values.address,
         type: values.type,
         network: ethNetwork,
+        polygonNetwork: polyNetwork,
         polygonContractAddress: values.polygonContractAddress,
         queueId: values.queueId,
         prizeContractAddress: values.prizeContractAddress,
