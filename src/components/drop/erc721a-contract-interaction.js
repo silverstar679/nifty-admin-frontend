@@ -335,6 +335,21 @@ export const ERC721AContractInteraction = (props) => {
     }
   }
 
+  const setMerkleRoot = async () => {
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContractForBase.setMerkleRoot(merkleroot)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
+
   const addTokenIds = async () => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
       if (account === ownerPolygon) {
@@ -427,8 +442,9 @@ export const ERC721AContractInteraction = (props) => {
           </Card>
 
           <Box sx={{ py: 1 }} />
-
           <Card>
+            <CardHeader title="Set Merkle Root" sx={{ py: 1 }} />
+            <Divider />
             <CardContent>
               <Grid container>
                 <Grid item xs={12}>
@@ -445,6 +461,18 @@ export const ERC721AContractInteraction = (props) => {
                 </Grid>
               </Grid>
             </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={setMerkleRoot}>
+                Set
+              </Button>
+            </Box>
           </Card>
 
           <Box sx={{ py: 1 }} />
