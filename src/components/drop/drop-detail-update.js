@@ -95,8 +95,6 @@ export const DropDetailUpdate = (props) => {
   })
 
   const [checkboxValues, setCheckboxValues] = useState({
-    isDropEnded: props.drop.isDropEnded,
-    isBattleEnded: props.drop.isBattleEnded,
     isDefaultNFTImage: props.drop.isDefaultNFTImage,
     isFutureDrop: props.drop.isFutureDrop,
   })
@@ -183,8 +181,6 @@ export const DropDetailUpdate = (props) => {
 
         created_at: values.created_at,
 
-        isDropEnded: checkboxValues.isDropEnded,
-        isBattleEnded: checkboxValues.isBattleEnded,
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
         isFutureDrop: checkboxValues.isFutureDrop,
 
@@ -310,37 +306,6 @@ export const DropDetailUpdate = (props) => {
                     renderInput={(params) => <TextField {...params} />}
                   />
                 </LocalizationProvider>
-              </Grid>
-
-              <Grid item md={6} xs={12}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="isDropEnded"
-                        checked={checkboxValues.isDropEnded}
-                        onChange={handleCheckboxChange}
-                        inputProps={{ 'aria-label': 'controlled' }}
-                      />
-                    }
-                    label="Drop Ended?"
-                  />
-                </FormGroup>
-              </Grid>
-              <Grid item md={6} xs={12}>
-                <FormGroup>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        name="isBattleEnded"
-                        checked={checkboxValues.isBattleEnded}
-                        onChange={handleCheckboxChange}
-                        inputProps={{ 'aria-label': 'controlled' }}
-                      />
-                    }
-                    label="Battle Ended?"
-                  />
-                </FormGroup>
               </Grid>
               <Grid item md={6} xs={12}>
                 <FormGroup>

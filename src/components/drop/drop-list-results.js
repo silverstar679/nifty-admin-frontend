@@ -21,7 +21,6 @@ import {
 } from '@mui/material'
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever'
 import EditIcon from '@mui/icons-material/Edit'
-import { displayAddress } from '../../utils/displayAddress'
 import NextLink from 'next/link'
 import { deleteDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
@@ -129,15 +128,13 @@ export const DropListResults = () => {
 
       <Card>
         <PerfectScrollbar>
-          <Box sx={{ minWidth: 1050 }}>
+          <Box>
             <Table>
               <TableHead>
                 <TableRow>
                   <TableCell>No</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>Type</TableCell>
-                  <TableCell>Drop Status</TableCell>
-                  <TableCell>Battle Status</TableCell>
                   <TableCell>Drop Date</TableCell>
                   <TableCell>Battle Date</TableCell>
                   <TableCell>Status</TableCell>
@@ -153,28 +150,9 @@ export const DropListResults = () => {
                         {drop.name}
                       </Typography>
                     </TableCell>
-                    {/* <TableCell>{drop.address && displayAddress(drop.address)}</TableCell> */}
-                    {/* <TableCell>
-                      {drop.polygonContractAddress && displayAddress(drop.polygonContractAddress)}
-                    </TableCell>
-                    <TableCell>{drop.queueId}</TableCell> */}
                     <TableCell>{TYPES[drop.type]}</TableCell>
-                    <TableCell>
-                      {drop.isDropEnded
-                        ? 'Done'
-                        : new Date(drop.dropDate) <= new Date(Date.now())
-                        ? 'Started'
-                        : 'New'}
-                    </TableCell>
-                    <TableCell>
-                      {drop.isBattleEnded
-                        ? 'Done'
-                        : new Date(drop.battleDate) <= new Date(Date.now())
-                        ? 'Started'
-                        : 'New'}
-                    </TableCell>
-                    <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
-                    <TableCell>{format(new Date(drop.battleDate), 'MM/dd/yyyy - hh:mm')}</TableCell>
+                    <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy-hh:mm')}</TableCell>
+                    <TableCell>{format(new Date(drop.battleDate), 'MM/dd/yyyy-hh:mm')}</TableCell>
                     <TableCell>{STATUS[drop.battleStatus]}</TableCell>
                     <TableCell>
                       <Box

@@ -98,8 +98,6 @@ export const DropCreate = (props) => {
   })
 
   const [checkboxValues, setCheckboxValues] = useState({
-    isDropEnded: false,
-    isBattleEnded: false,
     isDefaultNFTImage: false,
     isFutureDrop: false,
   })
@@ -319,8 +317,6 @@ export const DropCreate = (props) => {
         threshold: values.threshold,
         created_at: values.created_at,
 
-        isDropEnded: checkboxValues.isDropEnded,
-        isBattleEnded: checkboxValues.isBattleEnded,
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
         isFutureDrop: checkboxValues.isFutureDrop,
 
