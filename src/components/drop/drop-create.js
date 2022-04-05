@@ -102,6 +102,7 @@ export const DropCreate = (props) => {
     isFutureDrop: false,
   })
 
+  const [presaleDate, setPresaleDate] = useState(new Date(Date.now()).toISOString())
   const [dropDate, setDropDate] = useState(new Date(Date.now()).toISOString())
   const [battleDate, setBattleDate] = useState(new Date(Date.now()).toISOString())
 
@@ -216,6 +217,10 @@ export const DropCreate = (props) => {
     })
   }
 
+  const handlePresaleDateChange = (newDate) => {
+    setPresaleDate(new Date(newDate).toISOString())
+  }
+
   const handleDropDateChange = (newDate) => {
     setDropDate(new Date(newDate).toISOString())
   }
@@ -320,6 +325,7 @@ export const DropCreate = (props) => {
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
         isFutureDrop: checkboxValues.isFutureDrop,
 
+        presaleDate,
         dropDate,
         battleDate,
       }
@@ -502,7 +508,17 @@ export const DropCreate = (props) => {
                   ))}
                 </TextField>
               </Grid>
-              <Grid item md={6} xs={12}>
+              <Grid item md={4} xs={12}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DateTimePicker
+                    label="Presale Date"
+                    value={presaleDate}
+                    onChange={handlePresaleDateChange}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+              </Grid>
+              <Grid item md={4} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DateTimePicker
                     label="Drop Date"
@@ -512,7 +528,7 @@ export const DropCreate = (props) => {
                   />
                 </LocalizationProvider>
               </Grid>
-              <Grid item md={6} xs={12}>
+              <Grid item md={4} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DateTimePicker
                     label="Battle Date"

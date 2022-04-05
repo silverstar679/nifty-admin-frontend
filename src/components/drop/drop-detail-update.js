@@ -100,6 +100,7 @@ export const DropDetailUpdate = (props) => {
     isFutureDrop: props.drop.isFutureDrop,
   })
 
+  const [presaleDate, setPresaleDate] = useState(props.drop.presaleDate)
   const [dropDate, setDropDate] = useState(props.drop.dropDate)
   const [battleDate, setBattleDate] = useState(props.drop.battleDate)
 
@@ -118,6 +119,10 @@ export const DropDetailUpdate = (props) => {
       ...checkboxValues,
       [event.target.name]: event.target.checked,
     })
+  }
+
+  const handlePresaleDateChange = (newDate) => {
+    setPresaleDate(newDate)
   }
 
   const handleDropDateChange = (newDate) => {
@@ -185,6 +190,7 @@ export const DropDetailUpdate = (props) => {
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
         isFutureDrop: checkboxValues.isFutureDrop,
 
+        presaleDate,
         dropDate,
         battleDate,
       }
@@ -288,7 +294,17 @@ export const DropDetailUpdate = (props) => {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item md={6} xs={12}>
+              <Grid item md={4} xs={12}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DateTimePicker
+                    label="Presale Date"
+                    value={presaleDate}
+                    onChange={handlePresaleDateChange}
+                    renderInput={(params) => <TextField {...params} />}
+                  />
+                </LocalizationProvider>
+              </Grid>
+              <Grid item md={4} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DateTimePicker
                     label="Drop Date"
@@ -298,7 +314,7 @@ export const DropDetailUpdate = (props) => {
                   />
                 </LocalizationProvider>
               </Grid>
-              <Grid item md={6} xs={12}>
+              <Grid item md={4} xs={12}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DateTimePicker
                     label="Battle Date"
