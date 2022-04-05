@@ -550,7 +550,7 @@ export const DropCreate = (props) => {
                         inputProps={{ 'aria-label': 'controlled' }}
                       />
                     }
-                    label="Only show on Future Drop, not on Drop and Battle List page?"
+                    label="Only Show on Future Drop Carousel?"
                   />
                 </FormGroup>
               </Grid>
@@ -620,7 +620,7 @@ export const DropCreate = (props) => {
                   rows={5}
                   onChange={handleInputChange}
                   value={values.previewMedia}
-                  helperText="It can be used for heavy video files to show in home, drop list and battle list pages"
+                  helperText="It can be used for heavy video files"
                   variant="outlined"
                   placeholder='{"white": "https://niftyroyale.mypinata.cloud/ipfs/QmRb7A3cEyDqscqf1bN4aBXtDDQan7hpKr9zJAr4QkY116"}'
                 />

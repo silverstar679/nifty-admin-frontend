@@ -1,5 +1,17 @@
 import { useState, useEffect } from 'react'
-import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  Divider,
+  Grid,
+  TextField,
+  FormGroup,
+  Checkbox,
+  FormControlLabel,
+} from '@mui/material'
 import fetchEthereumABI from '../../services/fetchEthereumABI'
 import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useWeb3React } from '../../hooks'
@@ -13,6 +25,8 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { updateDrop } from 'src/services/apis'
+import { MerkleTree } from 'merkletreejs'
+import keccak256 from 'keccak256'
 
 export const ERC721AContractInteraction = (props) => {
   const { active, account, chainId } = useWeb3React()
@@ -23,7 +37,7 @@ export const ERC721AContractInteraction = (props) => {
   const prizeContractAddress = props.drop && props.drop.prizeContractAddress
   const prizeTokenId = props.drop && parseInt(props.drop.prizeTokenId)
   const tokenIds = props.drop && props.drop.tokenIds.join(',')
-
+  const whitelist = props.drop.whitelist && props.drop.whitelist.split(',')
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
@@ -35,6 +49,8 @@ export const ERC721AContractInteraction = (props) => {
   const [ownerPolygon, setOwnerPolygon] = useState('')
   const [winnerTokenId, setWinnerTokenId] = useState(0)
   const [baseUri, setBaseUri] = useState('')
+  const [isReveal, setIsReveal] = useState(false)
+  const [merkleroot, setMerkleroot] = useState('')
 
   const [intervalTime, setIntervalTime] = useState(1)
   const [eliminatedTokenCount, setEliminatedTokenCount] = useState(1)
@@ -49,6 +65,10 @@ export const ERC721AContractInteraction = (props) => {
 
   const handleBaseUriChange = (event) => {
     setBaseUri(event.target.value)
+  }
+
+  const handleIsRevealChange = (event) => {
+    setIsReveal(event.target.checked)
   }
 
   const handleIntervalTimeChange = (event) => {
@@ -131,6 +151,18 @@ export const ERC721AContractInteraction = (props) => {
     ethereumAbiForBase,
     true
   )
+
+  useEffect(() => {
+    // Hash leaves
+    if (whitelist) {
+      const leaves = whitelist.map((addr) => keccak256(addr))
+
+      // Create tree
+      const merkleTree = new MerkleTree(leaves, keccak256, { sortPairs: true })
+      const rootHash = `0x${merkleTree.getRoot().toString('hex')}`
+      setMerkleroot(rootHash)
+    }
+  }, [whitelist])
 
   useEffect(() => {
     async function getDropInfo() {
@@ -292,7 +324,7 @@ export const ERC721AContractInteraction = (props) => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
       if (account === owner) {
         toastInProgress()
-        const tx = await ethereumInjectedContractForBase.setBaseURI(baseUri, true)
+        const tx = await ethereumInjectedContractForBase.setBaseURI(baseUri, isReveal)
         await tx.wait()
         toastCompleted()
       } else {
@@ -397,6 +429,27 @@ export const ERC721AContractInteraction = (props) => {
           <Box sx={{ py: 1 }} />
 
           <Card>
+            <CardContent>
+              <Grid container>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                    label="Merkle Root"
+                    name="merkleroot"
+                    value={merkleroot}
+                    variant="outlined"
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+
+          <Box sx={{ py: 1 }} />
+
+          <Card>
             <CardHeader title="Flip Public Sale Status" sx={{ py: 1 }} />
             <Divider />
 
@@ -426,6 +479,19 @@ export const ERC721AContractInteraction = (props) => {
                 value={baseUri}
                 variant="outlined"
               />
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      name="isReveal"
+                      checked={isReveal}
+                      onChange={handleIsRevealChange}
+                      inputProps={{ 'aria-label': 'controlled' }}
+                    />
+                  }
+                  label="Reveal Metadata?"
+                />
+              </FormGroup>
             </CardContent>
             <Divider />
             <Box

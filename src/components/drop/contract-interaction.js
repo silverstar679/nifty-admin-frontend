@@ -645,6 +645,7 @@ export const ContractInteraction = (props) => {
           <Card>
             <CardHeader title="Ethereum Contract Functionalities" />
           </Card>
+
           <Box sx={{ py: 1 }} />
 
           <Card>

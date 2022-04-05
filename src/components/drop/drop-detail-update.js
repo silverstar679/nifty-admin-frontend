@@ -91,6 +91,7 @@ export const DropDetailUpdate = (props) => {
     prizeDescription: props.drop.prizeDescription,
     threshold: props.drop.threshold,
     previewMedia: JSON.stringify(props.drop.previewMedia),
+    whitelist: props.drop.whitelist,
     created_at: props.drop.created_at,
   })
 
@@ -178,7 +179,7 @@ export const DropDetailUpdate = (props) => {
         defaultNFTUri: values.defaultNFTUri,
         previewMedia: JSON.parse(values.previewMedia ? values.previewMedia : '{}'),
         threshold: values.threshold,
-
+        whitelist: values.whitelist,
         created_at: values.created_at,
 
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
@@ -318,7 +319,7 @@ export const DropDetailUpdate = (props) => {
                         inputProps={{ 'aria-label': 'controlled' }}
                       />
                     }
-                    label="Only show on Future Drop, not on Drop and Battle List page?"
+                    label="Only Show on Future Drop Carousel?"
                   />
                 </FormGroup>
               </Grid>
@@ -415,6 +416,18 @@ export const DropDetailUpdate = (props) => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
+                  multiline
+                  rows={3}
+                  label="Whitelist"
+                  name="whitelist"
+                  onChange={handleInputChange}
+                  value={values.whitelist}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
                   label="Minimum NFT counts to start battle"
                   name="threshold"
                   onChange={handleInputChange}
@@ -473,7 +486,7 @@ export const DropDetailUpdate = (props) => {
                   fullWidth
                   multiline
                   label="Object of Media files for random version"
-                  helperText="It can be used for heavy video files to show in home, drop list and battle list pages"
+                  helperText="It can be used for heavy video files"
                   name="previewMedia"
                   rows={5}
                   onChange={handleInputChange}
