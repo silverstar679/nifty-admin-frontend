@@ -319,6 +319,20 @@ export const ERC721AContractInteraction = (props) => {
       incorrectNetwork()
     }
   }
+  const flipPreSaleState = async () => {
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContractForPrize.flipIsPresaleState()
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
 
   const updateBaseUri = async () => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
@@ -493,7 +507,24 @@ export const ERC721AContractInteraction = (props) => {
               </Button>
             </Box>
           </Card>
+          <Box sx={{ py: 1 }} />
 
+          <Card>
+            <CardHeader title="Flip Pre-Sale Status" sx={{ py: 1 }} />
+            <Divider />
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={flipPreSaleState}>
+                Flip
+              </Button>
+            </Box>
+          </Card>
           <Box sx={{ py: 1 }} />
           <Card>
             <CardHeader title="Set Base URI" sx={{ py: 1 }} />
