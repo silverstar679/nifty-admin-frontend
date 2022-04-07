@@ -36,6 +36,7 @@ const TYPES = {
   mint: 'Minting Prize',
   random: 'Random',
   erc721a: 'ERC721A',
+  presale: 'Presale',
 }
 
 const STATUS = ['Initialized', 'Started', 'Ended']
@@ -135,6 +136,7 @@ export const DropListResults = () => {
                   <TableCell>No</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>Type</TableCell>
+                  <TableCell>Presale Date</TableCell>
                   <TableCell>Drop Date</TableCell>
                   <TableCell>Battle Date</TableCell>
                   <TableCell>Status</TableCell>
@@ -151,6 +153,9 @@ export const DropListResults = () => {
                       </Typography>
                     </TableCell>
                     <TableCell>{TYPES[drop.type]}</TableCell>
+                    <TableCell>
+                      {drop.presaleDate && format(new Date(drop.presaleDate), 'MM/dd/yyyy-hh:mm')}
+                    </TableCell>
                     <TableCell>{format(new Date(drop.dropDate), 'MM/dd/yyyy-hh:mm')}</TableCell>
                     <TableCell>{format(new Date(drop.battleDate), 'MM/dd/yyyy-hh:mm')}</TableCell>
                     <TableCell>{STATUS[drop.battleStatus]}</TableCell>

@@ -49,6 +49,8 @@ export const ERC721AContractInteraction = (props) => {
   const [ownerPolygon, setOwnerPolygon] = useState('')
   const [winnerTokenId, setWinnerTokenId] = useState(0)
   const [baseUri, setBaseUri] = useState('')
+  const [address, setAddress] = useState('')
+  const [quantity, setQuantity] = useState('')
   const [isReveal, setIsReveal] = useState(false)
   const [merkleroot, setMerkleroot] = useState('')
 
@@ -65,6 +67,12 @@ export const ERC721AContractInteraction = (props) => {
 
   const handleBaseUriChange = (event) => {
     setBaseUri(event.target.value)
+  }
+  const handleQuantityChange = (event) => {
+    setQuantity(event.target.value)
+  }
+  const handleAddressChange = (event) => {
+    setAddress(event.target.value)
   }
 
   const handleIsRevealChange = (event) => {
@@ -348,6 +356,20 @@ export const ERC721AContractInteraction = (props) => {
       incorrectNetwork()
     }
   }
+  const internalMint = async () => {
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContractForBase.internalMint(quantity, address)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
 
   const setMerkleRoot = async () => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
@@ -492,6 +514,23 @@ export const ERC721AContractInteraction = (props) => {
           <Box sx={{ py: 1 }} />
 
           <Card>
+            <CardHeader title="Flip Pre-Sale Status" sx={{ py: 1 }} />
+            <Divider />
+
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={flipPreSaleState}>
+                Flip
+              </Button>
+            </Box>
+          </Card>
+          <Box sx={{ py: 1 }} />
+          <Card>
             <CardHeader title="Flip Public Sale Status" sx={{ py: 1 }} />
             <Divider />
 
@@ -509,23 +548,6 @@ export const ERC721AContractInteraction = (props) => {
           </Card>
           <Box sx={{ py: 1 }} />
 
-          <Card>
-            <CardHeader title="Flip Pre-Sale Status" sx={{ py: 1 }} />
-            <Divider />
-
-            <Box
-              sx={{
-                display: 'flex',
-                justifyContent: 'flex-start',
-                p: 2,
-              }}
-            >
-              <Button color="primary" variant="contained" onClick={flipPreSaleState}>
-                Flip
-              </Button>
-            </Box>
-          </Card>
-          <Box sx={{ py: 1 }} />
           <Card>
             <CardHeader title="Set Base URI" sx={{ py: 1 }} />
             <Divider />
@@ -567,6 +589,47 @@ export const ERC721AContractInteraction = (props) => {
           </Card>
           <Box sx={{ py: 1 }} />
 
+          <Card>
+            <CardHeader title="Internal Mint" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Quantity"
+                    name="quantity"
+                    onChange={handleQuantityChange}
+                    value={quantity}
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Address"
+                    name="address"
+                    onChange={handleAddressChange}
+                    value={address}
+                    variant="outlined"
+                  />
+                </Grid>
+              </Grid>
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={internalMint}>
+                Mint
+              </Button>
+            </Box>
+          </Card>
+          <Box sx={{ py: 1 }} />
           <Card>
             <CardHeader title="Prize Contract Functionalities" />
           </Card>

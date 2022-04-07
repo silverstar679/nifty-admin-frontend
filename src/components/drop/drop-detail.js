@@ -35,27 +35,24 @@ export const DropDetail = (props) => {
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <TabList onChange={handleChange} aria-label="Drop Detail Tabs">
             <Tab label="Drop Detail Update" value="1" />
-            {drop && drop.address !== '' && drop.type !== 'old' && drop.type !== 'erc721a' && (
+            {drop && drop.address !== '' && drop.type !== 'old' && (
               <Tab label="Contract Interaction" value="2" />
-            )}
-            {drop && drop.address !== '' && drop.type === 'erc721a' && (
-              <Tab label="Contract Interaction" value="3" />
             )}
           </TabList>
         </Box>
         <TabPanel value="1">
           <DropDetailUpdate drop={drop} />
         </TabPanel>
-        {drop && drop.address !== '' && drop.type !== 'old' && drop.type !== 'erc721a' && (
-          <TabPanel value="2">
-            <ContractInteraction drop={drop} />
-          </TabPanel>
-        )}
-        {drop && drop.address !== '' && drop.type === 'erc721a' && (
-          <TabPanel value="3">
+        <TabPanel value="2">
+          {drop &&
+          drop.address !== '' &&
+          drop.type !== 'old' &&
+          (drop.type === 'erc721a' || drop.type === 'presale') ? (
             <ERC721AContractInteraction drop={drop} />
-          </TabPanel>
-        )}
+          ) : (
+            <ContractInteraction drop={drop} />
+          )}
+        </TabPanel>
       </TabContext>
     </Box>
   )
