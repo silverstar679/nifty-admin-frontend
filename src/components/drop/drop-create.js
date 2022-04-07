@@ -52,6 +52,10 @@ const types = [
     value: 'erc721a',
     label: 'ERC721A',
   },
+  {
+    value: 'presale',
+    label: 'Presale',
+  },
 ]
 
 const STATUS = [
