@@ -21,6 +21,7 @@ import {
   usePolygonContract,
   useEthereumContract,
 } from '../../hooks/useContract'
+import { ethers } from 'ethers'
 import { BigNumber } from '@ethersproject/bignumber'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
@@ -46,6 +47,7 @@ export const ERC721AContractInteraction = (props) => {
   const [polygonAbi, setPolygonAbi] = useState([])
   const [battleState, setBattleState] = useState(null)
   const [owner, setOwner] = useState('')
+  const [price, setPrice] = useState(0)
   const [ownerPolygon, setOwnerPolygon] = useState('')
   const [winnerTokenId, setWinnerTokenId] = useState(0)
   const [baseUri, setBaseUri] = useState('')
@@ -68,6 +70,11 @@ export const ERC721AContractInteraction = (props) => {
   const handleBaseUriChange = (event) => {
     setBaseUri(event.target.value)
   }
+
+  const handlePriceChange = (event) => {
+    setPrice(event.target.value)
+  }
+
   const handleQuantityChange = (event) => {
     setQuantity(event.target.value)
   }
@@ -175,6 +182,9 @@ export const ERC721AContractInteraction = (props) => {
   useEffect(() => {
     async function getDropInfo() {
       if (
+        ethereumContractForBase &&
+        ethereumContractForBase.provider &&
+        ethereumAbiForBase.length !== 0 &&
         ethereumContractForPrize &&
         ethereumContractForPrize.provider &&
         ethereumAbiForPrize.length !== 0 &&
@@ -186,9 +196,11 @@ export const ERC721AContractInteraction = (props) => {
           polygonContract.owner(),
           ethereumContractForPrize.owner(),
           polygonContract.battleQueue(queueId),
-        ]).then(([ownerPolygon, owner, battleInfo]) => {
+          ethereumContractForBase.price(),
+        ]).then(([ownerPolygon, owner, battleInfo, price]) => {
           setOwnerPolygon(ownerPolygon)
           setOwner(owner)
+          setPrice(Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())))
           setIntervalTime(
             BigNumber.from(battleInfo.intervalTime).toNumber() === 0
               ? 1
@@ -218,7 +230,15 @@ export const ERC721AContractInteraction = (props) => {
         polygonContract.removeListener('BattleEnded')
       }
     }
-  }, [polygonContract, polygonAbi, ethereumContractForPrize, ethereumAbiForPrize, queueId])
+  }, [
+    polygonContract,
+    polygonAbi,
+    ethereumContractForPrize,
+    ethereumAbiForPrize,
+    ethereumAbiForBase,
+    ethereumContractForBase,
+    queueId,
+  ])
 
   const toastInProgress = () => {
     setIsToast(false)
@@ -347,6 +367,20 @@ export const ERC721AContractInteraction = (props) => {
       if (account === owner) {
         toastInProgress()
         const tx = await ethereumInjectedContractForBase.setBaseURI(baseUri, isReveal)
+        await tx.wait()
+        toastCompleted()
+      } else {
+        toastNotOwner()
+      }
+    } else {
+      incorrectNetwork()
+    }
+  }
+  const updatePrice = async () => {
+    if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID)) {
+      if (account === owner) {
+        toastInProgress()
+        const tx = await ethereumInjectedContractForBase.setPrice(ethers.utils.parseEther(price))
         await tx.wait()
         toastCompleted()
       } else {
@@ -626,6 +660,34 @@ export const ERC721AContractInteraction = (props) => {
             >
               <Button color="primary" variant="contained" onClick={internalMint}>
                 Mint
+              </Button>
+            </Box>
+          </Card>
+          <Box sx={{ py: 1 }} />
+
+          <Card>
+            <CardHeader title="Set NFT Price" sx={{ py: 1 }} />
+            <Divider />
+            <CardContent>
+              <TextField
+                fullWidth
+                label="NFT Price"
+                name="price"
+                onChange={handlePriceChange}
+                value={price}
+                variant="outlined"
+              />
+            </CardContent>
+            <Divider />
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                p: 2,
+              }}
+            >
+              <Button color="primary" variant="contained" onClick={updatePrice}>
+                Update
               </Button>
             </Box>
           </Card>
