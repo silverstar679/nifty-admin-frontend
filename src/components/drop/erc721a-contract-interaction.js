@@ -37,7 +37,6 @@ export const ERC721AContractInteraction = (props) => {
   const queueId = props.drop && props.drop.queueId
   const prizeContractAddress = props.drop && props.drop.prizeContractAddress
   const prizeTokenId = props.drop && parseInt(props.drop.prizeTokenId)
-  const tokenIds = props.drop && props.drop.tokenIds.join(',')
   const whitelist = props.drop.whitelist && props.drop.whitelist.split(',')
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
@@ -55,6 +54,7 @@ export const ERC721AContractInteraction = (props) => {
   const [quantity, setQuantity] = useState('')
   const [isReveal, setIsReveal] = useState(false)
   const [merkleroot, setMerkleroot] = useState('')
+  const [totalSupply, setTotalSupply] = useState(0)
 
   const [intervalTime, setIntervalTime] = useState(1)
   const [eliminatedTokenCount, setEliminatedTokenCount] = useState(1)
@@ -197,8 +197,10 @@ export const ERC721AContractInteraction = (props) => {
           ethereumContractForPrize.owner(),
           polygonContract.battleQueue(queueId),
           ethereumContractForBase.price(),
-        ]).then(([ownerPolygon, owner, battleInfo, price]) => {
+          ethereumContractForBase.totalSupply(),
+        ]).then(([ownerPolygon, owner, battleInfo, price, totalSupply]) => {
           setOwnerPolygon(ownerPolygon)
+          setTotalSupply(parseInt(totalSupply))
           setOwner(owner)
           setPrice(Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())))
           setIntervalTime(
@@ -221,13 +223,24 @@ export const ERC721AContractInteraction = (props) => {
           setWinnerTokenId(parseInt(winnerTokenId, 10))
           setBattleState(battleState)
         })
+        ethereumContractForBase.removeAllListeners('Minted')
+
+        ethereumContractForBase.on('Minted', (buyerAddress, quantity, totalSupply, event) => {
+          setTotalSupply(parseInt(totalSupply, 10))
+        })
       }
     }
     getDropInfo()
 
     return () => {
-      if (polygonContract && polygonContract.provider) {
+      if (
+        polygonContract &&
+        polygonContract.provider &&
+        ethereumContractForBase &&
+        ethereumContractForBase.provider
+      ) {
         polygonContract.removeListener('BattleEnded')
+        ethereumContractForBase.removeListener('Minted')
       }
     }
   }, [
@@ -322,7 +335,6 @@ export const ERC721AContractInteraction = (props) => {
           network: props.drop.network,
           polygonNetwork: props.drop.polygonNetwork,
           battleDate: props.drop.battleDate,
-          tokenIds: props.drop.tokenIds,
           created_at: props.drop.created_at,
         }
         await handleUpdateDrop(data)
@@ -422,9 +434,12 @@ export const ERC721AContractInteraction = (props) => {
 
   const addTokenIds = async () => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
-      if (account === ownerPolygon) {
+      if (account === ownerPolygon && totalSupply !== 0) {
         toastInProgress()
-        const tx = await polygonInjectedContract.addTokenIds(queueId, tokenIds.split(','))
+        const tx = await polygonInjectedContract.addTokenIds(
+          queueId,
+          [...Array(totalSupply).keys()].slice(1)
+        )
         await tx.wait()
         toastCompleted()
       } else {
@@ -456,7 +471,6 @@ export const ERC721AContractInteraction = (props) => {
           network: props.drop.network,
           polygonNetwork: props.drop.polygonNetwork,
           battleDate: props.drop.battleDate,
-          tokenIds: props.drop.tokenIds,
           created_at: props.drop.created_at,
         }
         await handleUpdateDrop(data)
@@ -500,7 +514,7 @@ export const ERC721AContractInteraction = (props) => {
       incorrectNetwork()
     }
   }
-
+  console.log(totalSupply)
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
@@ -755,7 +769,15 @@ export const ERC721AContractInteraction = (props) => {
             <CardContent>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <TextField fullWidth label="Token IDs" value={tokenIds} variant="outlined" />
+                  <TextField
+                    fullWidth
+                    label="Token IDs"
+                    value={[...Array(totalSupply).keys()].slice(1)}
+                    variant="outlined"
+                    InputProps={{
+                      readOnly: true,
+                    }}
+                  />
                 </Grid>
               </Grid>
             </CardContent>

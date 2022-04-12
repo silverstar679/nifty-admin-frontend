@@ -86,7 +86,6 @@ export const DropDetailUpdate = (props) => {
     prizeContractAddress: props.drop.prizeContractAddress,
     prizeTokenId: props.drop.prizeTokenId,
     battleStatus: props.drop.battleStatus ? props.drop.battleStatus : '0',
-    tokenIds: props.drop.tokenIds.join(','),
     defaultMetadata: props.drop.defaultMetadata,
     prizeMetadata: props.drop.prizeMetadata,
     defaultNFTUri: props.drop.defaultNFTUri,
@@ -178,7 +177,6 @@ export const DropDetailUpdate = (props) => {
         queueId: values.queueId,
         prizeContractAddress: values.prizeContractAddress,
         prizeTokenId: values.prizeTokenId,
-        tokenIds: values.tokenIds.split(','),
         battleStatus: values.battleStatus,
         battleMessage: values.battleMessage,
         description: values.description,
@@ -417,19 +415,6 @@ export const DropDetailUpdate = (props) => {
                   name="prizeMetadata"
                   onChange={handleInputChange}
                   value={values.prizeMetadata}
-                  variant="outlined"
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  multiline
-                  label="Token ids"
-                  name="tokenIds"
-                  rows={3}
-                  onChange={handleInputChange}
-                  value={values.tokenIds}
                   variant="outlined"
                 />
               </Grid>
