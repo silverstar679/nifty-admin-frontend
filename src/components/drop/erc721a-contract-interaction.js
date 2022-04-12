@@ -514,7 +514,7 @@ export const ERC721AContractInteraction = (props) => {
       incorrectNetwork()
     }
   }
-  console.log(totalSupply)
+
   return (
     <>
       <InfoToast info={toastInfo} isToast={isToast} handleClose={handleClose} />
