@@ -54,7 +54,7 @@ export const ERC721AContractInteraction = (props) => {
   const [quantity, setQuantity] = useState('')
   const [isReveal, setIsReveal] = useState(false)
   const [merkleroot, setMerkleroot] = useState('')
-  const [totalSupply, setTotalSupply] = useState(0)
+  const [tokenIds, setTokenIds] = useState('')
 
   const [intervalTime, setIntervalTime] = useState(1)
   const [eliminatedTokenCount, setEliminatedTokenCount] = useState(1)
@@ -88,6 +88,10 @@ export const ERC721AContractInteraction = (props) => {
 
   const handleIntervalTimeChange = (event) => {
     setIntervalTime(event.target.value)
+  }
+
+  const handleTokenIdsChange = (event) => {
+    setTokenIds(event.target.value)
   }
 
   const handleEliminatedTokenCountChange = (event) => {
@@ -200,7 +204,7 @@ export const ERC721AContractInteraction = (props) => {
           ethereumContractForBase.totalSupply(),
         ]).then(([ownerPolygon, owner, battleInfo, price, totalSupply]) => {
           setOwnerPolygon(ownerPolygon)
-          setTotalSupply(parseInt(totalSupply))
+          setTokenIds([...Array(parseInt(totalSupply)).keys()].slice(1).join(','))
           setOwner(owner)
           setPrice(Number(ethers.utils.formatEther(BigNumber.from(price).toBigInt())))
           setIntervalTime(
@@ -226,7 +230,7 @@ export const ERC721AContractInteraction = (props) => {
         ethereumContractForBase.removeAllListeners('Minted')
 
         ethereumContractForBase.on('Minted', (buyerAddress, quantity, totalSupply, event) => {
-          setTotalSupply(parseInt(totalSupply, 10))
+          setTokenIds([...Array(parseInt(totalSupply)).keys()].slice(1).join(','))
         })
       }
     }
@@ -434,12 +438,9 @@ export const ERC721AContractInteraction = (props) => {
 
   const addTokenIds = async () => {
     if (chainId === parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID)) {
-      if (account === ownerPolygon && totalSupply !== 0) {
+      if (account === ownerPolygon) {
         toastInProgress()
-        const tx = await polygonInjectedContract.addTokenIds(
-          queueId,
-          [...Array(totalSupply).keys()].slice(1)
-        )
+        const tx = await polygonInjectedContract.addTokenIds(queueId, tokenIds.split(','))
         await tx.wait()
         toastCompleted()
       } else {
@@ -772,11 +773,9 @@ export const ERC721AContractInteraction = (props) => {
                   <TextField
                     fullWidth
                     label="Token IDs"
-                    value={[...Array(totalSupply).keys()].slice(1)}
+                    value={tokenIds}
+                    onChange={handleTokenIdsChange}
                     variant="outlined"
-                    InputProps={{
-                      readOnly: true,
-                    }}
                   />
                 </Grid>
               </Grid>
