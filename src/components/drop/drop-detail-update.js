@@ -96,6 +96,8 @@ export const DropDetailUpdate = (props) => {
     previewMedia: JSON.stringify(props.drop.previewMedia),
     whitelist: props.drop.whitelist,
     created_at: props.drop.created_at,
+    ethereumAbi: props.drop.ethereumAbi,
+    polygonAbi: props.drop.polygonAbi,
   })
 
   const [checkboxValues, setCheckboxValues] = useState({
@@ -188,6 +190,8 @@ export const DropDetailUpdate = (props) => {
         threshold: values.threshold,
         whitelist: values.whitelist,
         created_at: values.created_at,
+        ethereumAbi: values.ethereumAbi,
+        polygonAbi: values.polygonAbi,
 
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
         isFutureDrop: checkboxValues.isFutureDrop,
@@ -498,6 +502,30 @@ export const DropDetailUpdate = (props) => {
                   value={values.previewMedia}
                   variant="outlined"
                   placeholder='{"white": "https://niftyroyale.mypinata.cloud/ipfs/QmRb7A3cEyDqscqf1bN4aBXtDDQan7hpKr9zJAr4QkY116"}'
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Ethereum Contract ABI"
+                  name="ethereumAbi"
+                  rows={5}
+                  onChange={handleInputChange}
+                  value={values.ethereumAbi}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Polygon Contract ABI"
+                  name="polygonAbi"
+                  rows={5}
+                  onChange={handleInputChange}
+                  value={values.polygonAbi}
+                  variant="outlined"
                 />
               </Grid>
             </Grid>

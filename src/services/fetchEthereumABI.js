@@ -7,6 +7,7 @@ const etherscanBaseAPI = `https://api.niftyroyale.com/etherscan`
 export default async function fetchEthereumABI(address) {
   try {
     const response = await axios.get(`${etherscanBaseAPI}/${network}/contract-abi/${address}`)
+    console.log(response.data)
     return response.data
   } catch (error) {
     console.error(error)

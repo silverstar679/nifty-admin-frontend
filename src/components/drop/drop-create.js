@@ -330,6 +330,9 @@ export const DropCreate = (props) => {
         presaleDate,
         dropDate,
         battleDate,
+
+        ethereumAbi,
+        polygonAbi,
       }
       toastInProgress()
       const createdDrop = await createDrop(data)
