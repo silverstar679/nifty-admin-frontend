@@ -22,14 +22,7 @@ import { createDrop } from 'src/services/apis'
 import { InfoToast } from '../Toast'
 import { MESSAGE, SEVERITY } from '../../constants/toast'
 import { useWeb3React } from '../../hooks'
-import fetchEthereumABI from '../../services/fetchEthereumABI'
-import fetchPolygonABI from '../../services/fetchPolygonABI'
-import {
-  useEthereumNetworkContract,
-  usePolygonNetworkContract,
-  usePolygonContract,
-} from '../../hooks/useContract'
-import { BigNumber } from '@ethersproject/bignumber'
+import { usePolygonContract } from '../../hooks/useContract'
 
 const types = [
   {
@@ -80,6 +73,9 @@ export const DropCreate = (props) => {
   const polyNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? 'polygon' : 'mumbai'
   const [values, setValues] = useState({
+    name: '',
+    creator: '',
+    artist: '',
     address: '',
     polygonContractAddress: '',
     queueId: '',
@@ -98,6 +94,9 @@ export const DropCreate = (props) => {
     type: 'erc721a',
     threshold: '',
     previewMedia: '',
+    ethereumAbi: '',
+    polygonAbi: '',
+    queueId: '',
   })
 
   const [checkboxValues, setCheckboxValues] = useState({
@@ -112,99 +111,11 @@ export const DropCreate = (props) => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [ownerPolygon, setOwnerPolygon] = useState('')
-  const [ethereumAbi, setEthereumAbi] = useState([])
-  const [polygonAbi, setPolygonAbi] = useState([])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getABI() {
-      const abi = await fetchEthereumABI(values.address)
-      if (mounted) {
-        setEthereumAbi(abi)
-      }
-    }
-    if (values.address) {
-      getABI()
-    }
-
-    return () => {
-      mounted = false
-    }
-  }, [values.address])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getABI() {
-      const abi = await fetchPolygonABI(values.polygonContractAddress)
-      if (mounted) {
-        setPolygonAbi(abi)
-      }
-    }
-    if (values.polygonContractAddress) {
-      getABI()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [values.polygonContractAddress])
-
-  const ethereumContract = useEthereumNetworkContract(values.address, ethereumAbi, true)
-  const polygonContract = usePolygonNetworkContract(values.polygonContractAddress, polygonAbi, true)
   const polygonInjectedContract = usePolygonContract(
     values.polygonContractAddress,
-    polygonAbi,
+    values.polygonAbi,
     true
   )
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getDropInfo() {
-      Promise.all([ethereumContract.name()]).then(([name]) => {
-        if (mounted) {
-          setValues((prevValues) => ({
-            ...prevValues,
-            name: name.split(':')[1],
-            artist: name.split(':')[0].split('X')[1],
-            creator: name.split(':')[0].split('X')[0],
-          }))
-        }
-      })
-    }
-    if (ethereumContract && ethereumContract.provider && ethereumAbi.length !== 0) {
-      getDropInfo()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [ethereumContract, ethereumAbi])
-
-  useEffect(() => {
-    let mounted = true
-    async function getQueueId() {
-      Promise.all([polygonContract.battleQueueLength(), polygonContract.owner()]).then(
-        ([queueId, ownerAddress]) => {
-          if (mounted) {
-            setValues((prevValues) => ({
-              ...prevValues,
-              queueId: BigNumber.from(queueId).toNumber(),
-            }))
-            setOwnerPolygon(ownerAddress)
-          }
-        }
-      )
-    }
-    if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
-      getQueueId()
-    }
-
-    return () => {
-      mounted = false
-    }
-  }, [polygonContract, polygonAbi])
 
   const handleInputChange = (event) => {
     setValues({
@@ -323,6 +234,8 @@ export const DropCreate = (props) => {
         previewMedia: JSON.parse(values.previewMedia ? values.previewMedia : '{}'),
         threshold: values.threshold,
         created_at: values.created_at,
+        ethereumAbi: values.ethereumAbi,
+        polygonAbi: values.polygonAbi,
 
         isDefaultNFTImage: checkboxValues.isDefaultNFTImage,
         isFutureDrop: checkboxValues.isFutureDrop,
@@ -330,9 +243,6 @@ export const DropCreate = (props) => {
         presaleDate,
         dropDate,
         battleDate,
-
-        ethereumAbi,
-        polygonAbi,
       }
       toastInProgress()
       const createdDrop = await createDrop(data)
@@ -345,7 +255,10 @@ export const DropCreate = (props) => {
 
   const handleCreateDropContract = async () => {
     if (chainId === parseInt(parseInt(process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID))) {
-      if (account === ownerPolygon) {
+      if (
+        account === process.env.NEXT_PUBLIC_MANAGER_ACCOUNT ||
+        account === process.env.NEXT_PUBLIC_ADMIN_ACCOUNT
+      ) {
         toastInProgress()
         const tx = await polygonInjectedContract.initializeBattle(
           values.address,
@@ -644,6 +557,31 @@ export const DropCreate = (props) => {
                   helperText="It can be used for heavy video files"
                   variant="outlined"
                   placeholder='{"white": "https://niftyroyale.mypinata.cloud/ipfs/QmRb7A3cEyDqscqf1bN4aBXtDDQan7hpKr9zJAr4QkY116"}'
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Ethereum Contract ABI"
+                  name="ethereumAbi"
+                  rows={5}
+                  onChange={handleInputChange}
+                  value={values.ethereumAbi}
+                  variant="outlined"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  multiline
+                  label="Polygon Contract ABI"
+                  name="polygonAbi"
+                  rows={5}
+                  onChange={handleInputChange}
+                  value={values.polygonAbi}
+                  variant="outlined"
                 />
               </Grid>
             </Grid>

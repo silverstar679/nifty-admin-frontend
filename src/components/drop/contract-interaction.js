@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react'
 import { Box, Button, Card, CardContent, CardHeader, Divider, Grid, TextField } from '@mui/material'
-import fetchEthereumABI from '../../services/fetchEthereumABI'
-import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useWeb3React } from '../../hooks'
 import {
   useEthereumContract,
@@ -27,8 +25,8 @@ export const ContractInteraction = (props) => {
   const [toastInfo, setToastInfo] = useState({})
   const { active, account, chainId } = useWeb3React()
 
-  const [ethereumAbi, setEthereumAbi] = useState([])
-  const [polygonAbi, setPolygonAbi] = useState([])
+  const ethereumAbi = props.drop && props.drop.ethereumAbi
+  const polygonAbi = props.drop && props.drop.polygonAbi
   const [battleState, setBattleState] = useState(null)
   const [owner, setOwner] = useState('')
   const [ownerPolygon, setOwnerPolygon] = useState('')
@@ -92,39 +90,6 @@ export const ContractInteraction = (props) => {
     setDropDate(new Date(newDate).toISOString())
   }
 
-  useEffect(() => {
-    let mounted = true
-    async function getABI() {
-      const abi = await fetchEthereumABI(battleAddress)
-      if (mounted) {
-        setEthereumAbi(abi)
-      }
-    }
-    if (battleAddress) {
-      getABI()
-    }
-
-    return () => {
-      mounted = false
-    }
-  }, [battleAddress])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getABI() {
-      const abi = await fetchPolygonABI(polygonContractAddress)
-      if (mounted) {
-        setPolygonAbi(abi)
-      }
-    }
-    if (polygonContractAddress) {
-      getABI()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [polygonContractAddress])
   const ethereumContract = useEthereumNetworkContract(battleAddress, ethereumAbi, true)
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
   const ethereumInjectedContract = useEthereumContract(battleAddress, ethereumAbi, true)
@@ -150,7 +115,7 @@ export const ContractInteraction = (props) => {
       })
     }
     async function getDropInfo() {
-      if (ethereumContract && ethereumContract.provider && ethereumAbi.length !== 0) {
+      if (ethereumContract && ethereumContract.provider) {
         Promise.all([
           ethereumContract.battleState(),
           ethereumContract.price(),
@@ -173,7 +138,7 @@ export const ContractInteraction = (props) => {
           ]) => {
             setOwner(owner)
             setBattleState(parseInt(battleState, 10))
-            if (polygonContract && polygonContract.provider && polygonAbi.length !== 0) {
+            if (polygonContract && polygonContract.provider) {
               Promise.all([polygonContract.owner()]).then(([ownerPolygon]) => {
                 setOwnerPolygon(ownerPolygon)
               })
@@ -285,7 +250,7 @@ export const ContractInteraction = (props) => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ethereumContract, polygonContract, polygonAbi, ethereumAbi])
+  }, [ethereumContract, polygonContract])
 
   const toastInProgress = () => {
     setIsToast(false)

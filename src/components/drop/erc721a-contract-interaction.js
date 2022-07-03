@@ -12,8 +12,6 @@ import {
   Checkbox,
   FormControlLabel,
 } from '@mui/material'
-import fetchEthereumABI from '../../services/fetchEthereumABI'
-import fetchPolygonABI from '../../services/fetchPolygonABI'
 import { useWeb3React } from '../../hooks'
 import {
   useEthereumNetworkContract,
@@ -41,9 +39,9 @@ export const ERC721AContractInteraction = (props) => {
   const [isToast, setIsToast] = useState(false)
   const [toastInfo, setToastInfo] = useState({})
 
-  const [ethereumAbiForPrize, setEthereumAbiForPrize] = useState([])
-  const [ethereumAbiForBase, setEthereumAbiForBase] = useState([])
-  const [polygonAbi, setPolygonAbi] = useState([])
+  const ethereumAbi = props.drop && props.drop.ethereumAbi
+  const polygonAbi = props.drop && props.drop.polygonAbi
+
   const [battleState, setBattleState] = useState(null)
   const [owner, setOwner] = useState('')
   const [price, setPrice] = useState(0)
@@ -98,76 +96,26 @@ export const ERC721AContractInteraction = (props) => {
     setEliminatedTokenCount(event.target.value)
   }
 
-  useEffect(() => {
-    let mounted = true
-    async function getABI() {
-      const abi = await fetchEthereumABI(prizeContractAddress)
-      if (mounted) {
-        setEthereumAbiForPrize(abi)
-      }
-    }
-    if (prizeContractAddress) {
-      getABI()
-    }
-
-    return () => {
-      mounted = false
-    }
-  }, [prizeContractAddress])
-
-  useEffect(() => {
-    let mounted = true
-    async function getABI() {
-      const abi = await fetchEthereumABI(dropContractAddress)
-      if (mounted) {
-        setEthereumAbiForBase(abi)
-      }
-    }
-    if (dropContractAddress) {
-      getABI()
-    }
-
-    return () => {
-      mounted = false
-    }
-  }, [dropContractAddress])
-
-  useEffect(() => {
-    let mounted = true
-
-    async function getABI() {
-      const abi = await fetchPolygonABI(polygonContractAddress)
-      if (mounted) {
-        setPolygonAbi(abi)
-      }
-    }
-    if (polygonContractAddress) {
-      getABI()
-    }
-    return () => {
-      mounted = false
-    }
-  }, [polygonContractAddress])
   const polygonContract = usePolygonNetworkContract(polygonContractAddress, polygonAbi, true)
   const polygonInjectedContract = usePolygonContract(polygonContractAddress, polygonAbi, true)
   const ethereumContractForPrize = useEthereumNetworkContract(
     prizeContractAddress,
-    ethereumAbiForPrize,
+    ethereumAbi,
     true
   )
   const ethereumInjectedContractForPrize = useEthereumContract(
     prizeContractAddress,
-    ethereumAbiForPrize,
+    ethereumAbi,
     true
   )
   const ethereumInjectedContractForBase = useEthereumContract(
     dropContractAddress,
-    ethereumAbiForBase,
+    ethereumAbi,
     true
   )
   const ethereumContractForBase = useEthereumNetworkContract(
     dropContractAddress,
-    ethereumAbiForBase,
+    ethereumAbi,
     true
   )
 
@@ -188,10 +136,10 @@ export const ERC721AContractInteraction = (props) => {
       if (
         ethereumContractForBase &&
         ethereumContractForBase.provider &&
-        ethereumAbiForBase.length !== 0 &&
+        ethereumAbi.length !== 0 &&
         ethereumContractForPrize &&
         ethereumContractForPrize.provider &&
-        ethereumAbiForPrize.length !== 0 &&
+        ethereumAbi.length !== 0 &&
         polygonContract &&
         polygonContract.provider &&
         polygonAbi.length !== 0
@@ -251,8 +199,7 @@ export const ERC721AContractInteraction = (props) => {
     polygonContract,
     polygonAbi,
     ethereumContractForPrize,
-    ethereumAbiForPrize,
-    ethereumAbiForBase,
+    ethereumAbi,
     ethereumContractForBase,
     queueId,
   ])
