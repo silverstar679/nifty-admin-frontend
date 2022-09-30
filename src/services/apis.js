@@ -5,7 +5,7 @@ const network =
 const polygonNetwork =
   process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? 'polygon' : 'mumbai'
 
-const baseURL = `https://api-admin.niftyroyale.com`
+const baseURL = `https://api.niftyroyale.com/.netlify/functions/api`
 
 export async function getAllDrops() {
   try {
