@@ -1,9 +1,9 @@
 {
   "name": "nifty-royale-admin",
-  "author": "Kevin",
+  "author": "Nifty Royale",
   "licence": "MIT",
   "version": "2.0.0",
-  "private": false,
+  "private": true,
   "scripts": {
     "dev": "next",
     "build": "next build",
