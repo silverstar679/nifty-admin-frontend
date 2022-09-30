@@ -39,6 +39,12 @@ const App = (props) => {
                   name="viewport"
                   content="width=device-width, initial-scale=1, shrink-to-fit=no"
                 />
+                <meta name="theme-color" content="#000000" />
+                <meta charset="utf-8" />
+                <link
+                  rel="stylesheet"
+                  href="https://fonts.googleapis.com/css?family=Roboto+Mono|Roboto+Slab|Roboto:300,400,500,700"
+                />
                 <link rel="manifest" href="/manifest.json" />
                 <link rel="shortcut icon" href="/favicon.ico" />
               </Head>
