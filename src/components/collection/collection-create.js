@@ -8,7 +8,7 @@ import { useWeb3React } from '../../hooks'
 export const CollectionCreate = (props) => {
   const { account } = useWeb3React()
   const ethNetwork =
-    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
+    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'goerli'
   const [values, setValues] = useState({
     name: '',
     address: '',

@@ -3,10 +3,10 @@ import { NetworkConnector } from '@web3-react/network-connector'
 
 const POLLING_INTERVAL = 12000
 const RPC_URLS = {
-  1: 'https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
-  4: 'https://rinkeby.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161',
-  137: 'https://polygon-rpc.com/',
-  80001: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
+  1: `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_MAINNET}`,
+  5: `https://eth-goerli.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_GOERLI}`,
+  137: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_POLYGON}`,
+  80001: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY_MUMBAI}`,
 }
 
 export const injected = new InjectedConnector({
@@ -14,7 +14,7 @@ export const injected = new InjectedConnector({
 })
 
 export const ethereumNetwork = new NetworkConnector({
-  urls: { 1: RPC_URLS[1], 4: RPC_URLS[4] },
+  urls: { 1: RPC_URLS[1], 5: RPC_URLS[5] },
   defaultChainId: process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID,
   pollingInterval: POLLING_INTERVAL,
 })

@@ -69,7 +69,7 @@ const STATUS = [
 export const DropCreate = (props) => {
   const { active, account, chainId } = useWeb3React()
   const ethNetwork =
-    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
+    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'goerli'
   const polyNetwork =
     process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137' ? 'polygon' : 'mumbai'
   const [values, setValues] = useState({

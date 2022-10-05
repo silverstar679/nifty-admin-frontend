@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const network =
-  process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
+  process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'goerli'
 const etherscanBaseAPI = `https://api.niftyroyale.com/etherscan`
 
 export default async function fetchEthereumABI(address) {

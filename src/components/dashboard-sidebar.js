@@ -5,7 +5,7 @@ import PropTypes from 'prop-types'
 import { Box, Divider, Drawer, Typography, useMediaQuery } from '@mui/material'
 import { ChartBar as ChartBarIcon } from '../icons/chart-bar'
 import { ShoppingBag as ShoppingBagIcon } from '../icons/shopping-bag'
-import { User as UserIcon } from '../icons/user'
+// import { User as UserIcon } from '../icons/user'
 import { NavItem } from './nav-item'
 
 const items = [
@@ -89,10 +89,10 @@ export const DashboardSidebar = (props) => {
                 </Typography>
                 <Typography color="neutral.400" variant="body2">
                   {process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1'
-                    ? 'Mainnet Version'
+                    ? 'Mainnet - Polygon Version'
                     : process.env.NEXT_PUBLIC_DEFAULT_POLYGON_NETWORK_CHAIN_ID === '137'
-                    ? 'Polygon version'
-                    : 'Rinkeby Version'}
+                    ? 'Goerli - Polygon version'
+                    : 'Goerli - Mumbai Version'}
                 </Typography>
               </div>
             </Box>

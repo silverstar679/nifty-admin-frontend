@@ -36,7 +36,7 @@ const STATUS = [
 export const CollectionBattleDetailUpdate = (props) => {
   const { account } = useWeb3React()
   const ethNetwork =
-    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'rinkeby'
+    process.env.NEXT_PUBLIC_DEFAULT_ETHEREUM_NETWORK_CHAIN_ID === '1' ? 'mainnet' : 'goerli'
   const [values, setValues] = useState({
     name: props.collectionBattle.name,
     address: props.collectionBattle.address,

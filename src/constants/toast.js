@@ -15,7 +15,7 @@ export const MESSAGE = {
   ERROR_OCCURRED: 'An error occurred!',
   WRONG_NETWORK: 'Metamask is connected to the wrong network. Please switch to Ethereum Mainnet',
   WRONG_NETWORK_TEST:
-    'Metamask is connected to the wrong network. Please switch to Ethereum Rinkeby',
+    'Metamask is connected to the wrong network. Please switch to Ethereum Goerli',
   PASSIVE_NETWORKS_NOT_CONNECTED:
     'Blockchain networks are not connected. Please check your network connection',
   SUCCESS_REGISTER_EMAIL: 'You have signed up successfully!',
